@@ -17,13 +17,13 @@ from utils import constants
 
 DISCOUNT = 0.9
 NUM_EPISODES = 20000
-EPSILON_MIN = 0.1
+EPSILON_MIN = 0.01
 
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES)
+epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=0.5)
 
 game = Game(
     board_size=9,
@@ -76,7 +76,7 @@ for i in tqdm(range(NUM_EPISODES)):
 
     if i % (NUM_EPISODES / 10) == 0:
         print(
-            f"Average reward over last 50 episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
+            f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
 
     if np.mean(episode_rewards[-constants.EPISODE_WINDOW :]) > constants.WIN_AVERAGE:
@@ -92,23 +92,21 @@ with open("../policies/Qlearner/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 save_episode_duration_graph(
-    "../images/Qlearner/epsiode_durations.png",
+    "../images/Qlearner/episode_durations.png",
     episode_durations,
     learner="Qlearner",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_episode_reward_graph(
-    "../images/Qlearner/episode_rewards_Qlearner.png",
+    "../images/Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Qlearner",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_unique_states_graph(
-    "../images/Qlearner/unique_states_Qlearner.png",
-    unique_states_seen,
-    learner="Qlearner",
+    "../images/Qlearner/unique_states.png", unique_states_seen, learner="Qlearner",
 )
 
 print(f"Number of unique states seen: {len(Q.keys())}")

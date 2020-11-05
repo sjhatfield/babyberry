@@ -18,7 +18,7 @@ from utils import constants
 
 DISCOUNT = 0.9
 NUM_EPISODES = 10000
-EPSILON_MIN = 0.1
+EPSILON_MIN = 0.01
 
 Q1 = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 Q2 = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
@@ -26,7 +26,7 @@ Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES)
+epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=0.5)
 
 
 def get_action(Q1, Q2):
@@ -127,7 +127,7 @@ with open("../policies/double_Qlearner/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 save_episode_duration_graph(
-    "../images/double_Qlearner/epsiode_durations.png",
+    "../images/double_Qlearner/episode_durations.png",
     episode_durations,
     learner="Double QLearner",
     mean_length=constants.EPISODE_WINDOW,

@@ -18,6 +18,7 @@ from utils import constants
 DISCOUNT = 0.9
 NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
+N = 10
 
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
@@ -42,31 +43,56 @@ game = Game(
 episode_durations = []
 episode_rewards = []
 unique_states_seen = []
+states = [0] * N
+actions = [0] * N
+rewards = [0] * N
 
 for i in tqdm(range(NUM_EPISODES)):
     state, total_reward, done = game.reset()
+    states[0] = state
     state_visits[state.tobytes()] += 1
     steps = 0
-    while not done:
-        if np.random.random() < epsilon_decay.get_current_value():
-            action = np.random.choice(constants.BABY_MOVEMENTS)
-        else:
-            action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
-
-        next_state, reward, done = game.step(action)
-        total_reward += reward
-
-        Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)] += (
-            1 / state_visits[state.tobytes()]
-        ) * (
-            reward
-            + DISCOUNT * Q[next_state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
-            - Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
-        )
-
-        state = next_state.copy()
-        state_visits[state.tobytes()] += 1
-        steps += 1
+    if np.random.random() < epsilon_decay.get_current_value():
+        action = np.random.choice(constants.BABY_MOVEMENTS)
+    else:
+        action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
+    actions[0] = action
+    T = np.inf
+    for t in range(int(1e6)):
+        if t < T:
+            state, reward, done = game.step(action)
+            state_visits[state.tobytes()] += 1
+            steps += 1
+            total_reward += reward
+            states[t % N] = state
+            rewards[t % N] = reward
+            if done:
+                T = t + 1
+            else:
+                if np.random.random() < epsilon_decay.get_current_value():
+                    action = np.random.choice(constants.BABY_MOVEMENTS)
+                else:
+                    action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
+                actions[(t + 1) % N] = action
+        tau = t - N + 1
+        if tau >= 0:
+            G = 0
+            for j in range(tau + 1, min(tau + N, T) + 1):
+                G += (DISCOUNT ** (j - tau - 1)) * rewards[j % N]
+            if tau + N < T:
+                G += (DISCOUNT ** N) * Q[states[(tau + N) % N].tobytes()][
+                    constants.BABY_MOVEMENTS.index(actions[(tau + N) % N])
+                ]
+            Q[states[tau % N].tobytes()][
+                constants.BABY_MOVEMENTS.index(actions[tau % N])
+            ] += (1 / state_visits[states[tau % N].tobytes()]) * (
+                G
+                - Q[states[tau % N].tobytes()][
+                    constants.BABY_MOVEMENTS.index(actions[tau % N])
+                ]
+            )
+        if tau == (T - 1):
+            break
 
     epsilon_decay.decay()
 
@@ -88,25 +114,25 @@ for i in tqdm(range(NUM_EPISODES)):
         break
 
 
-with open("../policies/sarsa/policy.pickle", "wb") as f:
+with open("../policies/nstep_sarsa/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 save_episode_duration_graph(
-    "../images/sarsa/episode_durations.png",
+    "../images/nstep_sarsa/episode_durations.png",
     episode_durations,
-    learner="Sarsa",
+    learner="N-step Sarsa",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_episode_reward_graph(
-    "../images/sarsa/episode_rewards.png",
+    "../images/nstep_sarsa/episode_rewards.png",
     episode_rewards,
-    learner="Sarsa",
+    learner="N-step Sarsa",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_unique_states_graph(
-    "../images/sarsa/unique_states.png", unique_states_seen, learner="Sarsa"
+    "../images/nstep_sarsa/unique_states.png", unique_states_seen, learner="Sarsa"
 )
 
 print(f"Number of unique states seen: {len(Q.keys())}")

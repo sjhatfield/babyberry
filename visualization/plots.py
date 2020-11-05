@@ -24,7 +24,12 @@ def save_episode_duration_graph(
         color="green",
         linewidth=2,
     )
-    ax.annotate(f"{durations[-1]}", (len(durations) - 1 - mean_length, durations[-1]))
+    ax.annotate(
+        f"{means[-1]}",
+        (len(durations) - 1, means[-1]),
+        xytext=(len(durations) - 1 + 200, means[-1]),
+    )
+    ax.grid()
     fig.savefig(filename)
 
 
@@ -47,7 +52,12 @@ def save_episode_reward_graph(
         color="green",
         linewidth=2,
     )
-    ax.annotate(f"{rewards[-1]}", (len(rewards) - 1 - mean_length, rewards[-1]))
+    ax.annotate(
+        f"{means[-1]}",
+        (len(rewards) - 1, means[-1]),
+        xytext=(len(rewards) - 1, means[-1] - 10),
+    )
+    ax.grid()
     fig.savefig(filename)
 
 
@@ -62,4 +72,5 @@ def save_unique_states_graph(filename: str, unique_states: list, learner: str) -
         color="green",
         linewidth=2,
     )
+    ax.grid()
     fig.savefig(filename)

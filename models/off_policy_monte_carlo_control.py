@@ -18,14 +18,14 @@ from collections import defaultdict
 import time
 
 DISCOUNT = 0.9
-NUM_EPISODES = 10000
-EPSILON_MIN = 0.01
+NUM_EPISODES = 30000
 
 Q = defaultdict(lambda: [np.random.random()] * len(constants.BABY_MOVEMENTS))
+C = defaultdict([0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, 0.5)
+epsilon_decay = Decay(1, 0.01, NUM_EPISODES, 0.5)
 
 game = Game(
     board_size=9,
@@ -44,8 +44,6 @@ game = Game(
 episode_rewards = []
 unique_states_seen = []
 episode_durations = []
-
-returns = defaultdict(list)
 
 start_time = time.time()
 
@@ -69,18 +67,20 @@ for ep in tqdm(range(NUM_EPISODES)):
     episode_rewards.append(total_reward)
     episode_durations.append(episode_length)
     G = 0
+    W = 1
     for i in range(len(episode_tuples) - 2, 0, -1):
-        G = DISCOUNT * G + episode_tuples[i + 1][2]
-        state_action_present = False
-        for j in range(i):
-            if (episode_tuples[i][0] == episode_tuples[j][0]).all():
-                if episode_tuples[i][1] == episode_tuples[j][1]:
-                    state_action_present = True
-        if not state_action_present:
-            returns[(episode_tuples[i][0].tobytes(), episode_tuples[i][1])].append(G)
-            Q[episode_tuples[i][0].tobytes()][
-                constants.BABY_MOVEMENTS.index(episode_tuples[i][1])
-            ] = np.mean(returns[(episode_tuples[i][0].tobytes(), episode_tuples[i][1])])
+        S_t = episode_tuples[i][0]
+        A_t = episode_tuples[i][1]
+        R_t = episode_tuples[i][2]
+        G = DISCOUNT * G + R_t
+        C[S_t.tobytes()][constants.BABY_MOVEMENTS.index(A_t)] += W
+        Q[S_t.tobytes()][constants.BABY_MOVEMENTS.index(A_t)] += (
+            W / C[S_t.tobytes()][constants.BABY_MOVEMENTS.index(A_t)]
+        ) * (G - Q[S_t.tobytes()][constants.BABY_MOVEMENTS.index(A_t)])
+        if A_t != constants.BABY_MOVEMENTS[np.argmax(Q[S_t.tobytes()])]:
+            break
+        current_epsilon = epsilon_decay.get_current_value()
+        W = W / (current_epsilon - (current_epsilon / 5))
 
     if len(episode_rewards) >= constants.EPISODE_WINDOW:
         episode_rewards_mean = np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
@@ -103,27 +103,27 @@ for ep in tqdm(range(NUM_EPISODES)):
 
 print(f"Learning took {round(time.time() - start_time, 3)} seconds")
 
-with open("../policies/monte_carlo_ES/policy.pickle", "wb") as f:
+with open("../policies/off_policy_monte_carlo_control/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 save_episode_duration_graph(
-    "../images/monte_carlo_ES/episode_durations.png",
+    "../images/off_policy_monte_carlo_control/episode_durations.png",
     episode_durations,
-    learner="Monte Carlos (Exploring Starts)",
+    learner="Off-policy Monde Carlo Control",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_episode_reward_graph(
-    "../images/monte_carlo_ES/episode_rewards.png",
+    "../images/off_policy_monte_carlo_control/episode_rewards.png",
     episode_rewards,
-    learner="Monte Carlos (Exploring Starts)",
+    learner="Off-policy Monde Carlo Control)",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_unique_states_graph(
-    "../images/monte_carlo_ES/unique_states.png",
+    "../images/off_policy_monte_carlo_control/unique_states.png",
     unique_states_seen,
-    learner="Monte Carlo (Exploring Starts)",
+    learner="Off-policy Monde Carlo Control",
 )
 
 print(f"Number of unique states seen: {len(Q.keys())}")
