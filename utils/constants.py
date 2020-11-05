@@ -11,7 +11,7 @@ COLORS = {
 }
 WAIT_MS = 400
 
-# Learners
+# Constants across learners
 SEED = 3142
 STATE_SIZE = 5
 EPISODE_WINDOW = 200

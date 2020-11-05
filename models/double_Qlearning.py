@@ -146,14 +146,4 @@ save_unique_states_graph(
     learner="Double QLearner",
 )
 
-""" # Final demonstration of learner using sum of two Q values
-state, _, done = game.reset()
-while not done:
-    action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
-    state, reward, done = game.step(action, render=True)
-    print(state)
-    for pair in zip(constants.BABY_MOVEMENTS, Q[state.tobytes()]):
-        print(f"{pair[0]}: {round(pair[1], 3)}", end=", ")
-    print("\n") """
-
 print(f"Number of unique states seen: {len(Q.keys())}")

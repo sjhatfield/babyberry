@@ -18,10 +18,10 @@ from collections import defaultdict
 import time
 
 DISCOUNT = 0.9
-NUM_EPISODES = 30000
+NUM_EPISODES = 1000
 
 Q = defaultdict(lambda: [np.random.random()] * len(constants.BABY_MOVEMENTS))
-C = defaultdict([0] * len(constants.BABY_MOVEMENTS))
+C = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
