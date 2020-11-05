@@ -1,0 +1,13 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.formatting.provider": "black"
+}
+
+{
+"python.pythonPath":"/home/sjhat/Desktop/baby_berry/bin/python3",
+"python.testing.pytestArgs": [
+    "tests"
+],
+"python.testing.pytestEnabled": true
+}
+
