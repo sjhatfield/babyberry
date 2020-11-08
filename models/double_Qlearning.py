@@ -28,7 +28,7 @@ Q2 = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 epsilon_decay = Decay(
-    1, EPSILON_MIN, constants.EPISODES_TO_LEARN, proportion_to_decay_over=0.2
+    1, EPSILON_MIN, constants.EPISODES_TO_LEARN, proportion_to_decay_over=0.25
 )
 
 # Need a way of generating actions and values from the two
