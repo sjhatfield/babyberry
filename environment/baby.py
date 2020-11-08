@@ -82,7 +82,7 @@ class Baby:
                 self.position[1] -= 1
                 return True
             else:
-                return True
+                return False
         return False
 
     def get_position(self):

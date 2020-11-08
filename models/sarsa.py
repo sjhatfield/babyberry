@@ -16,14 +16,15 @@ from tqdm import tqdm
 from utils import constants
 
 DISCOUNT = 0.9
-NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
 
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=0.75)
+epsilon_decay = Decay(
+    1, EPSILON_MIN, constants.EPISODES_TO_LEARN, proportion_to_decay_over=0.9
+)
 
 game = Game(
     board_size=9,
@@ -43,7 +44,7 @@ episode_durations = []
 episode_rewards = []
 unique_states_seen = []
 
-for i in tqdm(range(NUM_EPISODES)):
+for i in tqdm(range(constants.EPISODES_TO_LEARN)):
     state, total_reward, done = game.reset()
     state_visits[state.tobytes()] += 1
     steps = 0
@@ -108,6 +109,4 @@ save_episode_reward_graph(
 save_unique_states_graph(
     "../images/sarsa/unique_states.png", unique_states_seen, learner="Sarsa"
 )
-
-print(f"Number of unique states seen: {len(Q.keys())}")
 

@@ -1,4 +1,8 @@
 from math import log, exp
+import numpy as np
+from utils import constants
+from collections import defaultdict
+from environment.game import Game
 
 
 class Decay:
@@ -38,3 +42,26 @@ class Decay:
         """
         return max(exp(self.b * self.episode), self.end)
 
+    def select_action(self, state: np.array, Q: defaultdict) -> str:
+        if np.random.random() < self.get_current_value():
+            action = np.random.choice(constants.BABY_MOVEMENTS)
+        else:
+            action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
+        return action
+
+
+# Game initialization here to save lines in the learning file
+def init_game_for_learning():
+    return Game(
+        board_size=9,
+        baby_initial_position=[4, 4],
+        move_reward=-1,
+        eat_reward=5,
+        illegal_move_reward=-100,
+        complete_reward=100,
+        num_berries=5,
+        berry_movement_probabilities=[0.5] * 5,
+        state_size=constants.STATE_SIZE,
+        dad_initial_position=-1,
+        dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
+    )
