@@ -16,20 +16,21 @@ from collections import defaultdict
 import pickle
 from tqdm import tqdm
 
+# Learning hyperparameters
 DISCOUNT = 0.9
 NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
-N = 10
+N = 5
+PROPORTION_DECAY_EPSILON_OVER = 1
 
 np.random.seed(constants.SEED)
 
 # Initialize the learning data structures
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=0.75)
-states = [0] * N
-actions = [0] * N
-rewards = [0] * N
+epsilon_decay = Decay(
+    1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER
+)
 
 game = init_game_for_learning()
 
@@ -42,13 +43,15 @@ unique_states_seen = []
 for i in tqdm(range(NUM_EPISODES)):
     # Return to beginning of game
     state, total_reward, done = game.reset()
-    states[0] = state
+    states = [state]
+    rewards = [0]
     state_visits[state.tobytes()] += 1
     steps = 0
 
     # Select and store first action
     action = epsilon_decay.select_action(state, Q)
-    actions[0] = action
+    actions = [action]
+    # T will be reassigned below, need it high to begin with
     T = np.inf
     t = 0
     tau = -1
@@ -61,32 +64,35 @@ for i in tqdm(range(NUM_EPISODES)):
             state_visits[state.tobytes()] += 1
             steps += 1
             total_reward += reward
-            states[t % N] = state
-            rewards[t % N] = reward
+            states.append(state)
+            rewards.append(reward)
+            # If done set T so that no more steps are taken above
             if done:
                 T = t + 1
             else:
                 action = epsilon_decay.select_action(state, Q)
-                actions[(t + 1) % N] = action
+                actions.append(action)
+        # tau is the step getting updated
         tau = t - N + 1
+        # If an update is possible
         if tau >= 0:
+            # Sum discounted past reward
             G = sum(
-                [(DISCOUNT ** (j - tau - 1)) * rewards[j % N]]
-                for j in range(tau + 1, min(tau + N, T) + 1)
+                [
+                    (DISCOUNT ** (j - tau - 1)) * rewards[j]
+                    for j in range(tau + 1, min(tau + N, T) + 1)
+                ]
             )
             # If steps do not take us beyond the end of the episode
             if tau + N < T:
-                G += (DISCOUNT ** N) * Q[states[(tau + N) % N].tobytes()][
-                    constants.BABY_MOVEMENTS.index(actions[(tau + N) % N])
-                ]
-            Q[states[tau % N].tobytes()][
-                constants.BABY_MOVEMENTS.index(actions[tau % N])
-            ] += (1 / state_visits[states[tau % N].tobytes()]) * (
-                G
-                - Q[states[tau % N].tobytes()][
-                    constants.BABY_MOVEMENTS.index(actions[tau % N])
-                ]
-            )
+                s = states[tau + N]
+                a = actions[tau + N]
+                G += (DISCOUNT ** N) * Q[s.tobytes()][constants.BABY_MOVEMENTS.index(a)]
+            s = states[tau]
+            a = actions[tau]
+            Q[s.tobytes()][constants.BABY_MOVEMENTS.index(a)] += (
+                1 / state_visits[s.tobytes()]
+            ) * (G - Q[s.tobytes()][constants.BABY_MOVEMENTS.index(a)])
         t += 1
 
     epsilon_decay.decay()
@@ -106,7 +112,7 @@ for i in tqdm(range(NUM_EPISODES)):
         print(
             f"Game beaten in {i} episodes with average episode length over past ",
             f"{constants.EPISODE_WINDOW} episodes of ",
-            f"{np.mean(episode_durations[-constants.EPISODE_WINDOW:])}",
+            f"{np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}",
         )
         break
 
@@ -133,3 +139,9 @@ save_unique_states_graph(
     "../images/nstep_sarsa/unique_states.png", unique_states_seen, learner="Sarsa"
 )
 
+# Save the rewards and durations
+with open("../data/nstep_sarsa/rewards.pickle", "wb") as f:
+    pickle.dump(episode_rewards, f)
+
+with open("../data/nstep_sarsa/durations.pickle", "wb") as f:
+    pickle.dump(episode_durations, f)

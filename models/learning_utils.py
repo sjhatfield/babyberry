@@ -1,4 +1,5 @@
 from math import log, exp
+from operator import add
 import numpy as np
 from utils import constants
 from collections import defaultdict
@@ -48,6 +49,29 @@ class Decay:
         else:
             action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
         return action
+
+    def selection_action_double_Q(self, state, Q1, Q2):
+        if np.random.random() < self.get_current_value():
+            action = np.random.choice(constants.BABY_MOVEMENTS)
+        else:
+            action = get_action(state, Q1, Q2)
+        return action
+
+
+# Generating actions from the two Q-value stores
+def get_action(state, Q1, Q2):
+    Q_value = get_Q_value(state, Q1, Q2)
+    return constants.BABY_MOVEMENTS[np.argmax(Q_value)]
+
+
+# Give the sum of Q values
+def get_Q_value(state, Q1, Q2):
+    Q_value = [0] * 5
+    if state.tobytes() in Q1.keys():
+        Q_value = list(map(add, Q_value, Q1[state.tobytes()]))
+    if state.tobytes() in Q2.keys():
+        Q_value = list(map(add, Q_value, Q2[state.tobytes()]))
+    return Q_value
 
 
 # Game initialization here to save lines in the learning file

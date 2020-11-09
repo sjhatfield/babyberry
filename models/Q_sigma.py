@@ -8,103 +8,109 @@ from visualization.plots import (
     save_episode_reward_graph,
     save_unique_states_graph,
 )
-from models.decay import Decay
+from models.learning_utils import Decay, init_game_for_learning
+from utils import constants
+
 import numpy as np
 from collections import defaultdict
 import pickle
 from tqdm import tqdm
-from utils import constants
 
+# Learning hyperparameters
 DISCOUNT = 0.9
 NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
 N = 10
+PROPORTION_DECAY_EPSILON_OVER = 1
 
-Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
-state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
-epsilon_decay = Decay(1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=0.75)
+# Initialize the learning data structures
+Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
+state_visits = defaultdict(int)
 
-game = Game(
-    board_size=9,
-    baby_initial_position=[4, 4],
-    move_reward=-1,
-    eat_reward=5,
-    illegal_move_reward=-100,
-    complete_reward=100,
-    num_berries=5,
-    berry_movement_probabilities=[0.5] * 5,
-    state_size=constants.STATE_SIZE,
-    dad_initial_position=-1,
-    dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
+epsilon_decay = Decay(
+    1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER
 )
+
+game = init_game_for_learning()
 
 episode_durations = []
 episode_rewards = []
 unique_states_seen = []
-states = [0] * N
-actions = [0] * N
-rewards = [0] * N
-sigmas = [0] * N
-rhos = [0] * N
 
+# Begin learning
 for i in tqdm(range(NUM_EPISODES)):
+    # Return to beginning of the game
     state, total_reward, done = game.reset()
-    states[0] = state
+    states = [state]
+    rewards = [0]
     state_visits[state.tobytes()] += 1
     steps = 0
-    if np.random.random() < epsilon_decay.get_current_value():
-        action = np.random.choice(constants.BABY_MOVEMENTS)
-    else:
-        action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
-    actions[0] = action
+
+    # Select and store the first action
+    action = epsilon_decay.select_action(state, Q)
+    actions = [action]
+
+    sigmas = [0]
+    rhos = [0]
+
+    # T will be reassigned below, need it high to begin with
     T = np.inf
+
+    #
     for t in range(int(1e6)):
         if t < T:
-            next_state, next_reward, next_done = game.step(action)
-            state_visits[next_state.tobytes()] += 1
+            # take next step in the episode
+            state, reward, done = game.step(action)
+            state_visits[state.tobytes()] += 1
             steps += 1
-            total_reward += next_reward
-            states[(t + 1) % N] = next_state
-            rewards[(t + 1) % N] = next_reward
+            total_reward += reward
+            states.append(state)
+            rewards.append(reward)
+
+            # If episode over set T so that no more updates will happen
             if done:
                 T = t + 1
             else:
-                sigma = np.random.random()
-                sigmas[t % N] = sigma
-                next_action = np.random.choice(constants.BABY_MOVEMENTS)
-                actions[(t + 1) % N] = next_action
+                # Select random action
+                action = np.random.choice(constants.BABY_MOVEMENTS)
+                actions.append(action)
+                if np.random.random() < 0.5:
+                    sigma = 1
+                else:
+                    sigma = 0
+                sigmas.append(sigma)
                 current_epsilon = epsilon_decay.get_current_value()
-                if (
-                    next_action
-                    == constants.BABY_MOVEMENTS[np.argmax(Q[next_state.tobytes()])]
-                ):
+                if action == constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]:
                     pi = (1 - current_epsilon) + current_epsilon / len(
                         constants.BABY_MOVEMENTS
                     )
                 else:
-                    pi = 1 - (
-                        (1 - current_epsilon)
-                        + current_epsilon / len(constants.BABY_MOVEMENTS)
+                    pi = current_epsilon - current_epsilon / len(
+                        constants.BABY_MOVEMENTS
                     )
                 b = 1 / len(constants.BABY_MOVEMENTS)
-                rho[(t + 1) % N] = pi / b
+                rhos.append(pi / b)
 
+        # Set tau appropriately in the past
         tau = t - N + 1
+        # If an update is possible
         if tau >= 0:
             if t + 1 < T:
-                G = Q[next_state.tobytes()][constants.BABY_MOVEMENTS.index(next_action)]
-            for k in range(min(t + 1, T), tau + 2):
+                G = Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
+            for k in range(min(t + 1, T), tau, -1):
+                # if terminal
                 if k == T:
-                    G = rewards[T % N]
+                    G = rewards[T]
+                # Otherwise find expected approximate value
                 else:
                     V_hat = 0
                     for a in constants.BABY_MOVEMENTS:
                         if (
                             a
                             == constants.BABY_MOVEMENTS[
-                                np.argmax(Q[states[k % N].tobytes()])
+                                np.argmax(Q[states[k].tobytes()])
                             ]
                         ):
                             pi = (1 - current_epsilon) + current_epsilon / len(
@@ -117,15 +123,11 @@ for i in tqdm(range(NUM_EPISODES)):
                             )
                         V_hat += (
                             pi
-                            * Q[states[k % N].tobytes()][
-                                constants.BABY_MOVEMENTS.index(a)
-                            ]
+                            * Q[states[k].tobytes()][constants.BABY_MOVEMENTS.index(a)]
                         )
                     if (
-                        actions[k % N]
-                        == constants.BABY_MOVEMENTS[
-                            np.argmax(Q[states[k % N].tobytes()])
-                        ]
+                        actions[k]
+                        == constants.BABY_MOVEMENTS[np.argmax(Q[states[k].tobytes()])]
                     ):
                         pi = (1 - current_epsilon) + current_epsilon / len(
                             constants.BABY_MOVEMENTS
@@ -136,18 +138,23 @@ for i in tqdm(range(NUM_EPISODES)):
                             + current_epsilon / len(constants.BABY_MOVEMENTS)
                         )
                     G = (
-                        rewards[k % N]
+                        rewards[k]
                         + DISCOUNT
-                        * (sigmas[k % N] * rhos[k % N] + (1 - sigmas[k % N]) * pi)(
-                            G - Q[states[k % N].tobytes()]
+                        * (sigmas[k] * rhos[k] + (1 - sigmas[k]) * pi)
+                        * (
+                            G
+                            - Q[states[k].tobytes()][
+                                constants.BABY_MOVEMENTS.index(actions[k])
+                            ]
                         )
                         + DISCOUNT * V_hat
                     )
-
-            Q[states[tau % N]][constants.BABY_MOVEMENTS.index(actions[tau % N])] += (
-                1 / state_visits[states[tau % N]]
+            # Finally make the update to the Q-value
+            Q[states[tau].tobytes()][constants.BABY_MOVEMENTS.index(actions[tau])] += (
+                1 / state_visits[states[tau].tobytes()]
             ) * (
-                G - Q[states[tau % N]][constants.BABY_MOVEMENTS.index(actions[tau % N])]
+                G
+                - Q[states[tau].tobytes()][constants.BABY_MOVEMENTS.index(actions[tau])]
             )
         if tau == (T - 1):
             break
@@ -158,23 +165,26 @@ for i in tqdm(range(NUM_EPISODES)):
     episode_rewards.append(total_reward)
     unique_states_seen.append(len(Q.keys()))
 
+    # Print some progress to CLI
     if i % (NUM_EPISODES / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
 
+    # Check for game completion
     if np.mean(episode_rewards[-constants.EPISODE_WINDOW :]) > 0:
         print(
             f"Game beaten in {i} episodes with average episode length over past ",
             f"{constants.EPISODE_WINDOW} episodes of ",
-            f"{np.mean(episode_durations[-constants.EPISODE_WINDOW:])}",
+            f"{np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}",
         )
         break
 
-
+# Save the policy
 with open("../policies/Q_sigma/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
+# Print some graphs showing learning progress
 save_episode_duration_graph(
     "../images/Q_sigma/episode_durations.png",
     episode_durations,
@@ -193,5 +203,10 @@ save_unique_states_graph(
     "../images/Q_sigma/unique_states.png", unique_states_seen, learner="Sarsa"
 )
 
-print(f"Number of unique states seen: {len(Q.keys())}")
+# Save the rewards and durations
+with open("../data/Q_sigma/rewards.pickle", "wb") as f:
+    pickle.dump(episode_rewards)
+
+with open("../data/Q_sigma/durations.pickle", "wb") as f:
+    pickle.dump(episode_durations)
 

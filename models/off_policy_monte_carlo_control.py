@@ -16,8 +16,10 @@ from collections import defaultdict, namedtuple
 import pickle
 from tqdm import tqdm
 
+# Learning hyperparameters
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
+PROPORTION_DECAY_EPSILON_OVER = 1
 Experience = namedtuple("Experience", field_names=["state", "action", "reward"])
 
 np.random.seed(constants.SEED)
@@ -26,7 +28,12 @@ np.random.seed(constants.SEED)
 Q = defaultdict(lambda: [np.random.random()] * len(constants.BABY_MOVEMENTS))
 C = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
-epsilon_decay = Decay(1, EPSILON_MIN, constants.EPISODES_TO_LEARN, 0.5)
+epsilon_decay = Decay(
+    1,
+    EPSILON_MIN,
+    constants.EPISODES_TO_LEARN,
+    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+)
 
 game = init_game_for_learning()
 
@@ -38,18 +45,20 @@ episode_durations = []
 # Learning begins
 for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
     state, reward, done = game.reset()
+    total_reward = 0
     action = epsilon_decay.select_action(state, Q)
-    episode_tuples = [Experience(state, action, reward)]
-    episode_length = 1
-    total_reward = reward
+    episode_tuples = []
+    episode_length = 0
 
     # Generate an episode and store the (S, A, R) tuples
     while not done:
-        state, reward, done = game.step(action)
+        action = epsilon_decay.select_action(state, Q)
+        new_state, reward, done = game.step(action)
+        episode_tuples.append(Experience(state, action, reward))
         total_reward += reward
         episode_length += 1
         episode_tuples.append(Experience(state, action, reward))
-        action = epsilon_decay.select_action(state, Q)
+        state = new_state
 
     # Update statistics
     episode_rewards.append(total_reward)
@@ -58,7 +67,9 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
     # Update Q-values based on the episode
     G = 0
     W = 1
-    for i in range(len(episode_tuples) - 2, 0, -1):
+    # Loop over episode in reverse oreder
+    for i in range(len(episode_tuples) - 1, 0, -1):
+        # Get the tuple information
         S_t = episode_tuples[i].state
         A_t = episode_tuples[i].action
         R_t = episode_tuples[i].reward
@@ -72,6 +83,9 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
         # If action was not greedy then end learning from episode
         if A_t != constants.BABY_MOVEMENTS[np.argmax(Q[S_t.tobytes()])]:
             break
+
+        # If action was greedy then update weight W with probability of
+        # greedy action being selected
         current_epsilon = epsilon_decay.get_current_value()
         prob_non_greedy_action = current_epsilon - (
             current_epsilon / len(constants.BABY_MOVEMENTS)
@@ -82,7 +96,7 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
     epsilon_decay.decay()
 
     # Print some progress to CLI
-    if ep % (NUM_EPISODES / 10) == 0:
+    if ep % (constants.EPISODES_TO_LEARN / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
@@ -96,10 +110,11 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
         )
         break
 
-
+# Save the policy
 with open("../policies/off_policy_monte_carlo_control/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
+# Save some graphs related to learing
 save_episode_duration_graph(
     "../images/off_policy_monte_carlo_control/episode_durations.png",
     episode_durations,
@@ -122,6 +137,7 @@ save_unique_states_graph(
     learner="Off-policy Monde Carlo Control",
 )
 
+# Save the rewards and durations
 with open("../data/off_policy_monte_carlo_control/rewards.pickle", "wb") as f:
     pickle.dump(episode_rewards)
 

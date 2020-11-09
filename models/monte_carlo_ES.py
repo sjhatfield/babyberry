@@ -117,6 +117,7 @@ save_unique_states_graph(
     learner="Monte Carlo (Exploring Starts)",
 )
 
+# Save the rewards and durations
 with open("../data/monte_carlo_ES/rewards.pickle", "wb") as f:
     pickle.dump(episode_rewards)
 

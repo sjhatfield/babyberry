@@ -8,18 +8,18 @@ from visualization.plots import (
     save_episode_reward_graph,
     save_unique_states_graph,
 )
-from models.learning_utils import Decay, init_game_for_learning
+from models.learning_utils import Decay, init_game_for_learning, get_action
 from utils import constants
 
 import numpy as np
 from collections import defaultdict
 import pickle
-from operator import add
 from tqdm import tqdm
 
-
+# Learning hyperparameters
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
+PROPORTION_DECAY_EPSILON_OVER = 0.3
 
 np.random.seed(constants.SEED)
 
@@ -28,24 +28,11 @@ Q2 = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 epsilon_decay = Decay(
-    1, EPSILON_MIN, constants.EPISODES_TO_LEARN, proportion_to_decay_over=0.25
+    1,
+    EPSILON_MIN,
+    constants.EPISODES_TO_LEARN,
+    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
 )
-
-# Need a way of generating actions and values from the two
-# Q-value data structures
-def get_action(Q1, Q2):
-    Q_value = get_Q_value(Q1, Q2)
-    return constants.BABY_MOVEMENTS[np.argmax(Q_value)]
-
-
-def get_Q_value(Q1, Q2):
-    Q_value = [0] * 5
-    if state.tobytes() in Q1.keys():
-        Q_value = list(map(add, Q_value, Q1[state.tobytes()]))
-    if state.tobytes() in Q2.keys():
-        Q_value = list(map(add, Q_value, Q2[state.tobytes()]))
-    return Q_value
-
 
 game = init_game_for_learning()
 
@@ -63,7 +50,7 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
         if np.random.random() < epsilon_decay.get_current_value():
             action = np.random.choice(constants.BABY_MOVEMENTS)
         else:
-            action = get_action(Q1, Q2)
+            action = get_action(state, Q1, Q2)
 
         next_state, reward, done = game.step(action)
         total_reward += reward
@@ -103,11 +90,13 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
     episode_rewards.append(total_reward)
     unique_states_seen.append(max(len(Q1.keys()), len(Q2.keys())))
 
+    # Print progress report to CLI
     if i % (constants.EPISODES_TO_LEARN / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
 
+    # Check for game completion
     if np.mean(episode_rewards[-constants.EPISODE_WINDOW :]) > constants.WIN_AVERAGE:
         print(
             f"Game beaten in {i} episodes with average episode length over past ",
@@ -116,10 +105,11 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
         )
         break
 
-
+# Save the policy
 with open("../policies/double_Qlearner/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
+# Save some graphs of learning statistics
 save_episode_duration_graph(
     "../images/double_Qlearner/episode_durations.png",
     episode_durations,
@@ -140,6 +130,7 @@ save_unique_states_graph(
     learner="Double QLearner",
 )
 
+# Save the rewards and durations
 with open("../data/double_Qlearner/rewards.pickle", "wb") as f:
     pickle.dump(episode_rewards, f)
 
