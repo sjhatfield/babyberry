@@ -38,6 +38,7 @@ game = init_game_for_learning()
 episode_durations = []
 episode_rewards = []
 unique_states_seen = []
+sigma = 0  # will alternate between 0 and 1 each time step
 
 # Begin learning
 for i in tqdm(range(NUM_EPISODES)):
@@ -55,7 +56,7 @@ for i in tqdm(range(NUM_EPISODES)):
     sigmas = [0]
     rhos = [0]
 
-    # T will be reassigned below, need it high to begin with
+    # T will be reassigned below, high to begin with
     T = np.inf
 
     #
@@ -76,10 +77,7 @@ for i in tqdm(range(NUM_EPISODES)):
                 # Select random action
                 action = np.random.choice(constants.BABY_MOVEMENTS)
                 actions.append(action)
-                if np.random.random() < 0.5:
-                    sigma = 1
-                else:
-                    sigma = 0
+                sigma = (sigma + 1) % 2
                 sigmas.append(sigma)
                 current_epsilon = epsilon_decay.get_current_value()
                 if action == constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]:
@@ -205,8 +203,8 @@ save_unique_states_graph(
 
 # Save the rewards and durations
 with open("../data/Q_sigma/rewards.pickle", "wb") as f:
-    pickle.dump(episode_rewards)
+    pickle.dump(episode_rewards, f)
 
 with open("../data/Q_sigma/durations.pickle", "wb") as f:
-    pickle.dump(episode_durations)
+    pickle.dump(episode_durations, f)
 

@@ -20,7 +20,9 @@ from tqdm import tqdm
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
 PROPORTION_DECAY_EPSILON_OVER = 1
-Experience = namedtuple("Experience", field_names=["state", "action", "reward"])
+Experience = namedtuple(
+    "Experience", field_names=["state", "action", "greedy", "reward"]
+)
 
 np.random.seed(constants.SEED)
 
@@ -46,18 +48,16 @@ episode_durations = []
 for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
     state, reward, done = game.reset()
     total_reward = 0
-    action = epsilon_decay.select_action(state, Q)
     episode_tuples = []
     episode_length = 0
 
     # Generate an episode and store the (S, A, R) tuples
     while not done:
-        action = epsilon_decay.select_action(state, Q)
+        action, greedy = epsilon_decay.select_action_MC(state, Q)
         new_state, reward, done = game.step(action)
-        episode_tuples.append(Experience(state, action, reward))
+        episode_tuples.append(Experience(state, action, greedy, reward))
         total_reward += reward
         episode_length += 1
-        episode_tuples.append(Experience(state, action, reward))
         state = new_state
 
     # Update statistics
@@ -72,6 +72,7 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
         # Get the tuple information
         S_t = episode_tuples[i].state
         A_t = episode_tuples[i].action
+        greedy_t = episode_tuples[i].greedy
         R_t = episode_tuples[i].reward
         A_t_index = constants.BABY_MOVEMENTS.index(A_t)
 
@@ -81,16 +82,16 @@ for ep in tqdm(range(constants.EPISODES_TO_LEARN)):
             G - Q[S_t.tobytes()][A_t_index]
         )
         # If action was not greedy then end learning from episode
-        if A_t != constants.BABY_MOVEMENTS[np.argmax(Q[S_t.tobytes()])]:
+        if not greedy_t:
             break
 
         # If action was greedy then update weight W with probability of
         # greedy action being selected
         current_epsilon = epsilon_decay.get_current_value()
-        prob_non_greedy_action = current_epsilon - (
+        prob_greedy_action = current_epsilon + (
             current_epsilon / len(constants.BABY_MOVEMENTS)
         )
-        W = W / prob_non_greedy_action
+        W = W / prob_greedy_action
 
     unique_states_seen.append(len(Q.keys()))
     epsilon_decay.decay()
@@ -118,7 +119,7 @@ with open("../policies/off_policy_monte_carlo_control/policy.pickle", "wb") as f
 save_episode_duration_graph(
     "../images/off_policy_monte_carlo_control/episode_durations.png",
     episode_durations,
-    learner="Off-policy Monde Carlo Control",
+    learner="Off-policy Monte Carlo Control",
     mean_length=constants.EPISODE_WINDOW,
 )
 
@@ -126,7 +127,7 @@ save_episode_duration_graph(
 save_episode_reward_graph(
     "../images/off_policy_monte_carlo_control/episode_rewards.png",
     episode_rewards,
-    learner="Off-policy Monde Carlo Control)",
+    learner="Off-policy Monte Carlo Control)",
     mean_length=constants.EPISODE_WINDOW,
 )
 
@@ -134,12 +135,12 @@ save_episode_reward_graph(
 save_unique_states_graph(
     "../images/off_policy_monte_carlo_control/unique_states.png",
     unique_states_seen,
-    learner="Off-policy Monde Carlo Control",
+    learner="Off-policy Monte Carlo Control",
 )
 
 # Save the rewards and durations
 with open("../data/off_policy_monte_carlo_control/rewards.pickle", "wb") as f:
-    pickle.dump(episode_rewards)
+    pickle.dump(episode_rewards, f)
 
 with open("../data/off_policy_monte_carlo_control/durations.pickle", "wb") as f:
-    pickle.dump(episode_durations)
+    pickle.dump(episode_durations, f)

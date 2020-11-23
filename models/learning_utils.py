@@ -50,6 +50,13 @@ class Decay:
             action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
         return action
 
+    def select_action_MC(self, state: np.array, Q: defaultdict) -> str:
+        if np.random.random() < self.get_current_value():
+            action = (np.random.choice(constants.BABY_MOVEMENTS), False)
+        else:
+            action = (constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])], True)
+        return action
+
     def selection_action_double_Q(self, state, Q1, Q2):
         if np.random.random() < self.get_current_value():
             action = np.random.choice(constants.BABY_MOVEMENTS)
