@@ -8,7 +8,7 @@ from visualization.plots import (
     save_episode_reward_graph,
     save_unique_states_graph,
 )
-from models.learning_utils import Decay, init_game_for_learning
+from models.learning_utils import Decay, init_game_for_learning, sample_action
 from utils import constants
 
 import numpy as np
@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 # Learning hyperparameters
 DISCOUNT = 0.9
-NUM_EPISODES = 30000
+NUM_EPISODES = 10000
 EPSILON_MIN = 0.01
 N = 10
 PROPORTION_DECAY_EPSILON_OVER = 1
@@ -27,6 +27,7 @@ np.random.seed(constants.SEED)
 
 # Initialize the learning data structures
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
+E = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))  # Eligibility traces
 state_visits = defaultdict(int)
 
 epsilon_decay = Decay(
@@ -44,118 +45,51 @@ sigma = 0  # will alternate between 0 and 1 each time step
 for i in tqdm(range(NUM_EPISODES)):
     # Return to beginning of the game
     state, total_reward, done = game.reset()
-    states = [state]
-    rewards = [0]
-    state_visits[state.tobytes()] += 1
     steps = 0
+    state_visits[state.tobytes()] += 1
 
     # Select and store the first action
-    action = epsilon_decay.select_action(state, Q)
+    policy = epsilon_decay.get_policy(Q, state)
+    action = sample_action(policy)
     actions = [action]
 
-    sigmas = [0]
-    rhos = [0]
+    while not done:
+        steps += 1
+        sigma = (sigma + 1) % 2
+        next_state, reward, done = game.step(action)
+        state_visits[next_state.tobytes()] += 1
+        total_reward += reward
+        policy = epsilon_decay.get_policy(Q, next_state)
+        next_action = sample_action(policy)
 
-    # T will be reassigned below, high to begin with
-    T = np.inf
+        policy = epsilon_decay.get_policy(Q, next_state)
 
-    #
-    for t in range(int(1e6)):
-        if t < T:
-            # take next step in the episode
-            state, reward, done = game.step(action)
-            state_visits[state.tobytes()] += 1
-            steps += 1
-            total_reward += reward
-            states.append(state)
-            rewards.append(reward)
+        sarsa_target = Q[next_state.tobytes()][
+            constants.BABY_MOVEMENTS.index(next_action)
+        ]
+        exp_sarsa_target = np.dot(policy, Q[next_state.tobytes()])
+        td_target = reward + DISCOUNT * (
+            sigma * sarsa_target + (1 - sigma) * exp_sarsa_target
+        )
+        td_error = (
+            td_target - Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
+        )
 
-            # If episode over set T so that no more updates will happen
-            if done:
-                T = t + 1
-            else:
-                # Select random action
-                action = np.random.choice(constants.BABY_MOVEMENTS)
-                actions.append(action)
-                sigma = (sigma + 1) % 2
-                sigmas.append(sigma)
-                current_epsilon = epsilon_decay.get_current_value()
-                if action == constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]:
-                    pi = (1 - current_epsilon) + current_epsilon / len(
-                        constants.BABY_MOVEMENTS
-                    )
-                else:
-                    pi = current_epsilon - current_epsilon / len(
-                        constants.BABY_MOVEMENTS
-                    )
-                b = 1 / len(constants.BABY_MOVEMENTS)
-                rhos.append(pi / b)
+        E[state.tobytes()][constants.BABY_MOVEMENTS.index(action)] += 1
 
-        # Set tau appropriately in the past
-        tau = t - N + 1
-        # If an update is possible
-        if tau >= 0:
-            if t + 1 < T:
-                G = Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
-            for k in range(min(t + 1, T), tau, -1):
-                # if terminal
-                if k == T:
-                    G = rewards[T]
-                # Otherwise find expected approximate value
-                else:
-                    V_hat = 0
-                    for a in constants.BABY_MOVEMENTS:
-                        if (
-                            a
-                            == constants.BABY_MOVEMENTS[
-                                np.argmax(Q[states[k].tobytes()])
-                            ]
-                        ):
-                            pi = (1 - current_epsilon) + current_epsilon / len(
-                                constants.BABY_MOVEMENTS
-                            )
-                        else:
-                            pi = 1 - (
-                                (1 - current_epsilon)
-                                + current_epsilon / len(constants.BABY_MOVEMENTS)
-                            )
-                        V_hat += (
-                            pi
-                            * Q[states[k].tobytes()][constants.BABY_MOVEMENTS.index(a)]
-                        )
-                    if (
-                        actions[k]
-                        == constants.BABY_MOVEMENTS[np.argmax(Q[states[k].tobytes()])]
-                    ):
-                        pi = (1 - current_epsilon) + current_epsilon / len(
-                            constants.BABY_MOVEMENTS
-                        )
-                    else:
-                        pi = 1 - (
-                            (1 - current_epsilon)
-                            + current_epsilon / len(constants.BABY_MOVEMENTS)
-                        )
-                    G = (
-                        rewards[k]
-                        + DISCOUNT
-                        * (sigmas[k] * rhos[k] + (1 - sigmas[k]) * pi)
-                        * (
-                            G
-                            - Q[states[k].tobytes()][
-                                constants.BABY_MOVEMENTS.index(actions[k])
-                            ]
-                        )
-                        + DISCOUNT * V_hat
-                    )
-            # Finally make the update to the Q-value
-            Q[states[tau].tobytes()][constants.BABY_MOVEMENTS.index(actions[tau])] += (
-                1 / state_visits[states[tau].tobytes()]
-            ) * (
-                G
-                - Q[states[tau].tobytes()][constants.BABY_MOVEMENTS.index(actions[tau])]
-            )
-        if tau == (T - 1):
+        for state in Q:
+            for i in range(len(constants.BABY_MOVEMENTS)):
+                Q[state][i] += (1 / state_visits[state]) * E[state][i] * td_error
+                E[state][i] = DISCOUNT * (
+                    sigma
+                    + policy[constants.BABY_MOVEMENTS.index(next_action)] * (1 - sigma)
+                )
+
+        if steps > 1000:
             break
+
+        state = next_state
+        action = next_action
 
     epsilon_decay.decay()
 

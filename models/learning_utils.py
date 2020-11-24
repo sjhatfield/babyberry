@@ -64,6 +64,26 @@ class Decay:
             action = get_action(state, Q1, Q2)
         return action
 
+    def get_probability_selection(self, state, Q, action):
+        if action == constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]:
+            return (1 - self.get_current_value()) + (
+                1 / len(constants.BABY_MOVEMENTS)
+            ) * self.get_current_value()
+        else:
+            return (
+                self.get_current_value()
+                - (1 / len(constants.BABY_MOVEMENTS)) * self.get_current_value()
+            )
+
+    def get_policy(self, Q, state):
+        greedy_action_idx = np.argmax(Q[state.tobytes()])
+        policy = np.repeat(
+            self.get_current_value() / len(constants.BABY_MOVEMENTS),
+            len(constants.BABY_MOVEMENTS),
+        )
+        policy[greedy_action_idx] += 1 - self.get_current_value()
+        return policy
+
 
 # Generating actions from the two Q-value stores
 def get_action(state, Q1, Q2):
@@ -96,3 +116,9 @@ def init_game_for_learning():
         dad_initial_position=-1,
         dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
     )
+
+
+def sample_action(policy):
+    return constants.BABY_MOVEMENTS[
+        np.random.choice(np.arange(0, len(policy)), p=policy)
+    ]
