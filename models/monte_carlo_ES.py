@@ -26,7 +26,7 @@ np.random.seed(constants.SEED)
 Q = defaultdict(lambda: [np.random.random()] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 returns = defaultdict(list)
-epsilon_decay = Decay(1, EPSILON_MIN, constants.EPISODES_TO_LEARN, 0.75)
+epsilon_decay = Decay(1, EPSILON_MIN, constants.EPISODES_TO_LEARN, 1)
 
 game = init_game_for_learning()
 
@@ -119,7 +119,7 @@ save_unique_states_graph(
 
 # Save the rewards and durations
 with open("../data/monte_carlo_ES/rewards.pickle", "wb") as f:
-    pickle.dump(episode_rewards)
+    pickle.dump(episode_rewards, f)
 
 with open("../data/monte_carlo_ES/durations.pickle", "wb") as f:
-    pickle.dump(episode_durations)
+    pickle.dump(episode_durations, f)

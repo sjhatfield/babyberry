@@ -19,7 +19,12 @@ from tqdm import tqdm
 # Learning hyperparameters
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
-PROPORTION_DECAY_EPSILON_OVER = 0.3
+PROPORTION_DECAY_EPSILON_OVER = 0.2
+SMART_DAD = False
+if SMART_DAD:
+    folder = "smart_dad"
+else:
+    folder = "dumb_dad"
 
 np.random.seed(constants.SEED)
 
@@ -34,7 +39,7 @@ epsilon_decay = Decay(
     proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
 )
 
-game = init_game_for_learning()
+game = init_game_for_learning(dumb_dad=~SMART_DAD)
 
 # Store episode statistics to measure success
 episode_durations = []
@@ -106,33 +111,33 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
         break
 
 # Save the policy
-with open("../policies/double_Qlearner/policy.pickle", "wb") as f:
+with open(f"../policies/{folder}/double_Qlearner/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 # Save some graphs of learning statistics
 save_episode_duration_graph(
-    "../images/double_Qlearner/episode_durations.png",
+    f"../images/{folder}/double_Qlearner/episode_durations.png",
     episode_durations,
     learner="Double QLearner",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_episode_reward_graph(
-    "../images/double_Qlearner/episode_rewards.png",
+    f"../images/{folder}/double_Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Double QLearner",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_unique_states_graph(
-    "../images/double_Qlearner/unique_states.png",
+    f"../images/{folder}/double_Qlearner/unique_states.png",
     unique_states_seen,
     learner="Double QLearner",
 )
 
 # Save the rewards and durations
-with open("../data/double_Qlearner/rewards.pickle", "wb") as f:
+with open(f"../data/{folder}/double_Qlearner/rewards.pickle", "wb") as f:
     pickle.dump(episode_rewards, f)
 
-with open("../data/double_Qlearner/durations.pickle", "wb") as f:
+with open(f"../data/{folder}/double_Qlearner/durations.pickle", "wb") as f:
     pickle.dump(episode_durations, f)

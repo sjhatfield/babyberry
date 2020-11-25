@@ -21,7 +21,12 @@ DISCOUNT = 0.9
 NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
 N = 5
-PROPORTION_DECAY_EPSILON_OVER = 1
+PROPORTION_DECAY_EPSILON_OVER = 0.8
+SMART_DAD = False
+if SMART_DAD:
+    folder = "smart_dad"
+else:
+    folder = "dumb_dad"
 
 np.random.seed(constants.SEED)
 
@@ -32,7 +37,7 @@ epsilon_decay = Decay(
     1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER
 )
 
-game = init_game_for_learning()
+game = init_game_for_learning(dumb_dad=~SMART_DAD)
 
 # Store episode statistics to measure success
 episode_durations = []
@@ -117,31 +122,33 @@ for i in tqdm(range(NUM_EPISODES)):
         break
 
 # Save the Q-values which is the policy
-with open("../policies/nstep_sarsa/policy.pickle", "wb") as f:
+with open(f"../policies/{folder}/nstep_sarsa/policy.pickle", "wb") as f:
     pickle.dump(dict(Q), f)
 
 # Save some graphs from the episode statistics
 save_episode_duration_graph(
-    "../images/nstep_sarsa/episode_durations.png",
+    f"../images/{folder}/nstep_sarsa/episode_durations.png",
     episode_durations,
     learner="N-step Sarsa",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_episode_reward_graph(
-    "../images/nstep_sarsa/episode_rewards.png",
+    f"../images/{folder}/nstep_sarsa/episode_rewards.png",
     episode_rewards,
     learner="N-step Sarsa",
     mean_length=constants.EPISODE_WINDOW,
 )
 
 save_unique_states_graph(
-    "../images/nstep_sarsa/unique_states.png", unique_states_seen, learner="Sarsa"
+    f"../images/{folder}/nstep_sarsa/unique_states.png",
+    unique_states_seen,
+    learner="Sarsa",
 )
 
 # Save the rewards and durations
-with open("../data/nstep_sarsa/rewards.pickle", "wb") as f:
+with open(f"../data/{folder}/nstep_sarsa/rewards.pickle", "wb") as f:
     pickle.dump(episode_rewards, f)
 
-with open("../data/nstep_sarsa/durations.pickle", "wb") as f:
+with open(f"../data/{folder}/nstep_sarsa/durations.pickle", "wb") as f:
     pickle.dump(episode_durations, f)

@@ -9,11 +9,11 @@ COLORS = {
     "berry": (230, 0, 115),
     "dad": (0, 102, 51),
 }
-WAIT_MS = 200
+WAIT_MS = 400
 
 # Constants across learners
 SEED = 3142
 STATE_SIZE = 5
 EPISODE_WINDOW = 200
-WIN_AVERAGE = 20
+WIN_AVERAGE = 0
 EPISODES_TO_LEARN = 30000

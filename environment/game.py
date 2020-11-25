@@ -38,7 +38,7 @@ class Game:
         berries can be given. If they are not given then they take random positions. 
         Probabilities that each of the berries will move at each time step are given also.
         If no probability is given then 50% probability of movement is used. Finally, the number of
-        berries on the board can be given. If not, then a radnom number of berries will be spawned 
+        berries on the board can be given. If not, then a random number of berries will be spawned 
         between 1 and the square root of the number of squares on the board.
 
         Parameters
@@ -65,8 +65,11 @@ class Game:
             If not none means there is a dad on the board to pick up the baby, gives the starting position of the dad
         dad_movement_probability : float
             Probility that if the dad cannot pick up the baby he will take a random movement
+        dumb_dad : bool, by default True
+            Determines whether the dad is smart meaning he moves towards the baby at each step.
         state_size : int, by default 3
             This is the size of the window around the baby that is returned as the state
+        
         """
         if type(board_size) == int:
             assert board_size > 0, "Board size must be positive integer"
@@ -380,6 +383,14 @@ class Game:
         )
         cv2.imshow("Environment Render", img)
         cv2.waitKey(constants.WAIT_MS)
+
+    def get_frame(self):
+        img = cv2.resize(
+            self.get_board_image()[..., ::-1].copy() / 255.0,
+            (300, 300),
+            interpolation=cv2.INTER_NEAREST,
+        )
+        return img
 
     def get_berries(self):
         return self.berries
