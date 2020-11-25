@@ -13,4 +13,4 @@ The algorithms were used against a dumb dad who moved randomly 50% of the time a
 
 The best performing algorithm against the dumb dad was n-step SARSA which solved the game within around 17500 episodes.
 
-![alt text](https://github.com/sjhatfield/babyberry/blob/master/image.jpg?raw=true)
+![alt text](https://github.com/sjhatfield/babyberry/blob/main/images/dumb_dad/nstep_sarsa/episode_rewards.png?raw=true)
