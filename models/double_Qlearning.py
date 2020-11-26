@@ -19,7 +19,7 @@ from tqdm import tqdm
 # Learning hyperparameters
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
-PROPORTION_DECAY_EPSILON_OVER = 0.2
+PROPORTION_DECAY_EPSILON_OVER = 0.6
 SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
@@ -126,6 +126,7 @@ save_episode_reward_graph(
     f"../images/{folder}/double_Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Double QLearner",
+    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

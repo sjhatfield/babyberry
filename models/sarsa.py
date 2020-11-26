@@ -24,7 +24,7 @@ if SMART_DAD:
 else:
     folder = "dumb_dad"
 
-Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
+Q = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
@@ -97,6 +97,7 @@ save_episode_reward_graph(
     f"../images/{folder}/sarsa/episode_rewards.png",
     episode_rewards,
     learner="Sarsa",
+    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

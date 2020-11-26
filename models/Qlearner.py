@@ -17,7 +17,7 @@ from utils import constants
 
 DISCOUNT = 0.9
 EPSILON_MIN = 0.01
-PROPORTION_DECAY_EPSILON_OVER = 0.3
+PROPORTION_DECAY_EPSILON_OVER = 0.5
 SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
@@ -100,6 +100,7 @@ save_episode_reward_graph(
     f"../images/{folder}/Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Qlearner",
+    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

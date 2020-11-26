@@ -18,10 +18,9 @@ from tqdm import tqdm
 
 # Learning hyperparameters
 DISCOUNT = 0.9
-NUM_EPISODES = 30000
 EPSILON_MIN = 0.01
-N = 5
-PROPORTION_DECAY_EPSILON_OVER = 0.8
+N = 3  # Needs to be relatively low due to small window on state
+PROPORTION_DECAY_EPSILON_OVER = 0.5
 SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
@@ -31,10 +30,13 @@ else:
 np.random.seed(constants.SEED)
 
 # Initialize the learning data structures
-Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
+Q = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
 state_visits = defaultdict(int)
 epsilon_decay = Decay(
-    1, EPSILON_MIN, NUM_EPISODES, proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER
+    1,
+    EPSILON_MIN,
+    constants.EPISODES_TO_LEARN,
+    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
 )
 
 game = init_game_for_learning(dumb_dad=~SMART_DAD)
@@ -45,7 +47,7 @@ episode_rewards = []
 unique_states_seen = []
 
 # Begin learning
-for i in tqdm(range(NUM_EPISODES)):
+for i in tqdm(range(constants.EPISODES_TO_LEARN)):
     # Return to beginning of game
     state, total_reward, done = game.reset()
     states = [state]
@@ -56,13 +58,15 @@ for i in tqdm(range(NUM_EPISODES)):
     # Select and store first action
     action = epsilon_decay.select_action(state, Q)
     actions = [action]
+
     # T will be reassigned below, need it high to begin with
     T = np.inf
     t = 0
     tau = -1
 
-    # Perform updates the Q
+    # Perform updates to Q
     while tau != (T - 1):
+
         # Take next step in episode and store
         if t < T:
             state, reward, done = game.step(action)
@@ -107,7 +111,7 @@ for i in tqdm(range(NUM_EPISODES)):
     unique_states_seen.append(len(Q.keys()))
 
     # Print some progress to CLI
-    if i % (NUM_EPISODES / 10) == 0:
+    if i % (constants.EPISODES_TO_LEARN / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
@@ -137,6 +141,7 @@ save_episode_reward_graph(
     f"../images/{folder}/nstep_sarsa/episode_rewards.png",
     episode_rewards,
     learner="N-step Sarsa",
+    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 
