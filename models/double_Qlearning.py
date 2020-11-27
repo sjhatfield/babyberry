@@ -16,10 +16,6 @@ from collections import defaultdict
 import pickle
 from tqdm import tqdm
 
-# Learning hyperparameters
-DISCOUNT = 0.9
-EPSILON_MIN = 0.01
-PROPORTION_DECAY_EPSILON_OVER = 0.6
 SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
@@ -28,15 +24,15 @@ else:
 
 np.random.seed(constants.SEED)
 
-Q1 = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
-Q2 = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
+Q1 = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
+Q2 = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 epsilon_decay = Decay(
     1,
-    EPSILON_MIN,
+    constants.EPSILON_MIN,
     constants.EPISODES_TO_LEARN,
-    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
 game = init_game_for_learning(dumb_dad=~SMART_DAD)
@@ -65,7 +61,7 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
                 1 / state_visits[state.tobytes()]
             ) * (
                 reward
-                + DISCOUNT
+                + constants.DISCOUNT
                 * Q2[next_state.tobytes()][np.argmax(Q1[next_state.tobytes()])]
                 - Q1[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
             )
@@ -74,20 +70,20 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
                 1 / state_visits[state.tobytes()]
             ) * (
                 reward
-                + DISCOUNT
+                + constants.DISCOUNT
                 * Q1[next_state.tobytes()][np.argmax(Q2[next_state.tobytes()])]
                 - Q2[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
             )
-
-        state = next_state.copy()
-        state_visits[state.tobytes()] += 1
-        steps += 1
 
         # Update the overall Q values
         Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)] = (
             Q1[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
             + Q2[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
         )
+
+        state = next_state.copy()
+        state_visits[state.tobytes()] += 1
+        steps += 1
 
     epsilon_decay.decay()
 
@@ -126,7 +122,7 @@ save_episode_reward_graph(
     f"../images/{folder}/double_Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Double QLearner",
-    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

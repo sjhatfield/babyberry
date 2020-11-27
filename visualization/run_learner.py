@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
-    "learner", choices=["Qlearner", "double_Qlearner", "nstep_satsa", "sarsa", "random"]
+    "learner", choices=["Qlearner", "double_Qlearner", "nstep_sarsa", "sarsa", "random"]
 )
 
 parser.add_argument(
@@ -25,7 +25,7 @@ from utils import constants
 import cv2
 import numpy as np
 
-np.random.seed(constants.SEED + 1)
+# np.random.seed(constants.SEED)
 
 game = init_game_for_learning(dumb_dad=args.dumb)
 
@@ -35,7 +35,6 @@ else:
     folder = "smart_dad"
 
 print(folder)
-
 if args.learner == "random":
     state, reward, done = game.reset()
     first = True
@@ -49,15 +48,23 @@ else:
     with open(f"../policies/{folder}/{args.learner}/policy.pickle", "rb") as f:
         Q = pickle.load(f)
 
-    state, reward, done = game.reset()
+    state, total_reward, done = game.reset()
     first = True
     while not done:
+        print(state)
         try:
+            for action, value in zip(constants.BABY_MOVEMENTS, Q[state.tobytes()]):
+                print(f"{action=}, {value=}")
             action = constants.BABY_MOVEMENTS[np.argmax(Q[state.tobytes()])]
         except:
+            print("took random action")
             action = np.random.choice(constants.BABY_MOVEMENTS)
         state, reward, done = game.step(action, True)
+        total_reward += reward
+        print(f"{reward=}")
         if first:
             input("waiting for recorder")
             first = False
+
+print(f"{total_reward=}")
 

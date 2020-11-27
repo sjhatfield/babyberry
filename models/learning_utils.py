@@ -106,7 +106,7 @@ def init_game_for_learning(dumb_dad: bool = True):
     if dumb_dad:
         return Game(
             board_size=9,
-            baby_initial_position=[4, 4],
+            baby_initial_position=[np.random.randint(0, 9), np.random.randint(0, 9)],
             move_reward=-1,
             eat_reward=5,
             illegal_move_reward=-100,
@@ -114,20 +114,18 @@ def init_game_for_learning(dumb_dad: bool = True):
             num_berries=5,
             berry_movement_probabilities=[0.5] * 5,
             state_size=constants.STATE_SIZE,
-            dad_initial_position=-1,
             dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
         )
     return Game(
         board_size=9,
-        baby_initial_position=[4, 4],
+        baby_initial_position=[np.random.randint(0, 9), np.random.randint(0, 9)],
         move_reward=-1,
         eat_reward=5,
         illegal_move_reward=-100,
-        complete_reward=100,
+        complete_reward=80,
         num_berries=5,
         berry_movement_probabilities=[0.5] * 5,
         state_size=constants.STATE_SIZE,
-        dad_initial_position=-1,
         dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
         dad_dumb=False,
     )

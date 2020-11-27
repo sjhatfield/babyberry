@@ -31,7 +31,7 @@ class Game:
         dad_initial_position: Union[List[int], int] = None,
         dad_movement_probability: float = 0.5,
         dad_dumb: bool = True,
-        game_over_reward: float = -20,
+        game_over_reward: float = -80,
         state_size: int = 3,
     ):
         """Initializes the game with a baby and some berries. Positions for some or all of the 
@@ -177,6 +177,22 @@ class Game:
                 self.dad_initial_position,
                 self.dad_dumb,
             )
+        else:
+            dad_position = [
+                np.random.randint(self.board_dimensions[0]),
+                np.random.randint(self.board_dimensions[1]),
+            ]
+            while dad_position == self.baby.get_position():
+                dad_position = [
+                    np.random.randint(self.board_dimensions[0]),
+                    np.random.randint(self.board_dimensions[1]),
+                ]
+            self.dad = Dad(
+                self.board_dimensions,
+                self.dad_movement_probability,
+                dad_position,
+                self.dad_dumb,
+            )
         self.berries = []
 
         for i in range(self.num_berries):
@@ -280,7 +296,17 @@ class Game:
                     True,
                 )
         self.move_berries()
-        # First move the dad. He will pick up the baby if adjacent
+
+        # Move the baby
+        move_legality = self.baby.action(action)
+        if not move_legality:
+            return (
+                self.get_state(),
+                self.illegal_move_reward,
+                False,
+            )
+
+        # Now move the dad. He will pick up the baby if adjacent
         if self.dad:
             move = np.random.choice(constants.BERRY_MOVEMENTS)
             self.dad.action(move, self.baby.get_position())
@@ -294,15 +320,6 @@ class Game:
                     True,
                 )
         self.make_board()
-
-        # Now move the baby
-        move_legality = self.baby.action(action)
-        if not move_legality:
-            return (
-                self.get_state(),
-                self.illegal_move_reward,
-                False,
-            )
 
         reward = self.move_reward
 

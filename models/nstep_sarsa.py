@@ -17,11 +17,8 @@ import pickle
 from tqdm import tqdm
 
 # Learning hyperparameters
-DISCOUNT = 0.9
-EPSILON_MIN = 0.01
 N = 3  # Needs to be relatively low due to small window on state
-PROPORTION_DECAY_EPSILON_OVER = 0.5
-SMART_DAD = False
+SMART_DAD = True
 if SMART_DAD:
     folder = "smart_dad"
 else:
@@ -30,13 +27,13 @@ else:
 np.random.seed(constants.SEED)
 
 # Initialize the learning data structures
-Q = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
+Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 epsilon_decay = Decay(
     1,
-    EPSILON_MIN,
+    constants.EPSILON_MIN,
     constants.EPISODES_TO_LEARN,
-    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
 game = init_game_for_learning(dumb_dad=~SMART_DAD)
@@ -88,7 +85,7 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
             # Sum discounted past reward
             G = sum(
                 [
-                    (DISCOUNT ** (j - tau - 1)) * rewards[j]
+                    (constants.DISCOUNT ** (j - tau - 1)) * rewards[j]
                     for j in range(tau + 1, min(tau + N, T) + 1)
                 ]
             )
@@ -96,7 +93,9 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
             if tau + N < T:
                 s = states[tau + N]
                 a = actions[tau + N]
-                G += (DISCOUNT ** N) * Q[s.tobytes()][constants.BABY_MOVEMENTS.index(a)]
+                G += (constants.DISCOUNT ** N) * Q[s.tobytes()][
+                    constants.BABY_MOVEMENTS.index(a)
+                ]
             s = states[tau]
             a = actions[tau]
             Q[s.tobytes()][constants.BABY_MOVEMENTS.index(a)] += (
@@ -141,7 +140,7 @@ save_episode_reward_graph(
     f"../images/{folder}/nstep_sarsa/episode_rewards.png",
     episode_rewards,
     learner="N-step Sarsa",
-    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

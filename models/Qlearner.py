@@ -15,24 +15,21 @@ import pickle
 from tqdm import tqdm
 from utils import constants
 
-DISCOUNT = 0.9
-EPSILON_MIN = 0.01
-PROPORTION_DECAY_EPSILON_OVER = 0.5
 SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
 else:
     folder = "dumb_dad"
 
-Q = defaultdict(lambda: [0] * (len(constants.BABY_MOVEMENTS) - 1) + [1])
+Q = defaultdict(lambda: [0] * len(constants.BABY_MOVEMENTS))
 state_visits = defaultdict(int)
 np.random.seed(constants.SEED)
 
 epsilon_decay = Decay(
     1,
-    EPSILON_MIN,
+    constants.EPSILON_MIN,
     constants.EPISODES_TO_LEARN,
-    proportion_to_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
 game = init_game_for_learning(dumb_dad=~SMART_DAD)
@@ -58,7 +55,7 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
             1 / state_visits[state.tobytes()]
         ) * (
             reward
-            + DISCOUNT * max(Q[next_state.tobytes()])
+            + constants.DISCOUNT * max(Q[next_state.tobytes()])
             - Q[state.tobytes()][constants.BABY_MOVEMENTS.index(action)]
         )
 
@@ -100,7 +97,7 @@ save_episode_reward_graph(
     f"../images/{folder}/Qlearner/episode_rewards.png",
     episode_rewards,
     learner="Qlearner",
-    proportion_decay_over=PROPORTION_DECAY_EPSILON_OVER,
+    proportion_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
 )
 

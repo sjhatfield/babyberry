@@ -1,6 +1,13 @@
+import sys
+
+sys.path.append("..")
+
+from utils import constants
+
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+
 
 matplotlib.style.use("seaborn-dark")
 
@@ -11,9 +18,7 @@ def save_episode_duration_graph(
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Episode duration")
-    ax.set_title(
-        f"Episode duration running mean over {mean_length} episodes during training for {learner}"
-    )
+    ax.set_title(f"Episode duration mean over {mean_length} episodes for {learner}")
     means = [
         np.array(durations[x : x + mean_length]).mean()
         for x in range(len(durations) - mean_length)
@@ -25,7 +30,7 @@ def save_episode_duration_graph(
         linewidth=2,
     )
     ax.annotate(
-        f"{means[-1]}",
+        f"{len(durations)} episodes",
         (len(durations) - 1, means[-1]),
         xytext=(len(durations) - 1 + 200, means[-1]),
     )
@@ -34,14 +39,16 @@ def save_episode_duration_graph(
 
 
 def save_episode_reward_graph(
-    filename: str, rewards: list, learner: str, mean_length: int = 10
+    filename: str,
+    rewards: list,
+    learner: str,
+    proportion_decay_over: float,
+    mean_length: int = 10,
 ) -> None:
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Episode total reward")
-    ax.set_title(
-        f"Episode reward running mean over {mean_length} episodes during training for {learner}"
-    )
+    ax.set_title(f"Episode reward mean over {mean_length} episodes for {learner}")
     means = [
         np.array(rewards[x : x + mean_length]).mean()
         for x in range(len(rewards) - mean_length)
@@ -53,11 +60,18 @@ def save_episode_reward_graph(
         linewidth=2,
     )
     ax.annotate(
-        f"{means[-1]}",
+        f"{len(rewards)} episodes",
         (len(rewards) - 1, means[-1]),
         xytext=(len(rewards) - 1, means[-1] - 10),
     )
     ax.grid()
+    plt.axvline(x=proportion_decay_over * constants.EPISODES_TO_LEARN)
+    plt.text(
+        x=proportion_decay_over * constants.EPISODES_TO_LEARN + 5,
+        y=min(means) + 10,
+        s="Epsilon fully decayed",
+        rotation=90,
+    )
     fig.savefig(filename)
 
 
