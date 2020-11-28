@@ -6,11 +6,11 @@ Additionally, there may be a dad who moves around the world trying to pick up th
 
 Here is an example of the baby moving randomly around the world. The baby is light blue, the berries are pink and the dumb (moves randomly with probability 50%) dad is in green.
 
-#TODO
+![Baby moving randomly against dumb dad](https://github.com/sjhatfield/babyberry/blob/main/images/random-dumb.gif)
 
 Here is the baby moving randomly with a smart dad who moves towards the baby with probability 50%.
 
-#TODO
+![Baby moving randomly against smart dad](https://github.com/sjhatfield/babyberry/blob/main/images/random-smart.gif)
 
 The purpose of this project was to use a variety of Reinforcement Learning algorithms in a new environment. In the models folder you can find the learning algorithm implementations. With the way the rewards were chosen, averaging 0 total reward over 200 consecutive epsiodes was considered *winning* the game.
 
@@ -24,7 +24,7 @@ All learners were given the same hyperparameters to assess their performance fai
 
 Here is the double Q-learner following its policy after training.
 
-#TODO
+![name-of-you-image](https://your-copied-image-address)
 
-The best performing algorithm against the **smart dad** was the
+The best performing algorithm against the **smart dad** was also the double Q-learner and 
 

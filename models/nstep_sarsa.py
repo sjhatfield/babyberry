@@ -36,7 +36,7 @@ epsilon_decay = Decay(
     proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
-game = init_game_for_learning(dumb_dad=~SMART_DAD)
+game = init_game_for_learning(dumb_dad=not SMART_DAD)
 
 # Store episode statistics to measure success
 episode_durations = []
@@ -116,7 +116,10 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
         )
 
     # Check for game completion
-    if np.mean(episode_rewards[-constants.EPISODE_WINDOW :]) > 0:
+    if (
+        np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
+        > constants.WIN_AVERAGE[folder]
+    ):
         print(
             f"Game beaten in {i} episodes with average episode length over past ",
             f"{constants.EPISODE_WINDOW} episodes of ",

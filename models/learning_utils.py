@@ -126,7 +126,7 @@ def init_game_for_learning(dumb_dad: bool = True):
         num_berries=5,
         berry_movement_probabilities=[0.5] * 5,
         state_size=constants.STATE_SIZE,
-        dad_movement_probability=constants.DEFAULT_MOVEMENT_PROBABILITY,
+        dad_movement_probability=0.25,
         dad_dumb=False,
     )
 
