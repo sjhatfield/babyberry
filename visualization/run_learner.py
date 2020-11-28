@@ -36,11 +36,12 @@ else:
 
 print(folder)
 if args.learner == "random":
-    state, reward, done = game.reset()
+    state, total_reward, done = game.reset()
     first = True
     while not done:
         action = np.random.choice(constants.BABY_MOVEMENTS)
         state, reward, done = game.step(action, True)
+        total_reward += reward
         if first:
             input("waiting for recorder")
             first = False

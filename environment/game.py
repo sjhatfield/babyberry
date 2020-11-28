@@ -314,6 +314,9 @@ class Game:
             # game is over and the baby failed to eat all the berries
             if self.dad.get_position() == self.baby.get_position():
                 self.make_board()
+                if render:
+                    self.render()
+                    input("waiting for recorder to end")
                 return (
                     self.get_state(),
                     self.game_over_reward,
@@ -347,6 +350,8 @@ class Game:
         # Now we check if the game is over
         if len(self.berries) == 0:
             reward += self.complete_reward
+            if render:
+                input("waiting for recorder to end")
             return self.get_state(), reward, True
 
         # The game is not over
