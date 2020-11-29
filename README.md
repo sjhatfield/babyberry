@@ -34,4 +34,4 @@ The best performing algorithm against the **smart dad** was the Q-learner whose 
 
 # TODO
 
-Implement n-step Tree Backup, off-policy Monte-Carlo control, Monte-Carlo Exploring Starts and Q($$\sigma$$) learning algorithms.
+Implement n-step Tree Backup, off-policy Monte-Carlo control, Monte-Carlo Exploring Starts and Q($\sigma$) learning algorithms.
