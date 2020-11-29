@@ -16,7 +16,7 @@ from collections import defaultdict
 import pickle
 from tqdm import tqdm
 
-SMART_DAD = True
+SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
 else:

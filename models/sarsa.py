@@ -15,7 +15,7 @@ import pickle
 from tqdm import tqdm
 from utils import constants
 
-SMART_DAD = True
+SMART_DAD = False
 if SMART_DAD:
     folder = "smart_dad"
 else:
