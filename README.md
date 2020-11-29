@@ -24,10 +24,10 @@ All learners were given the same hyperparameters to assess their performance fai
 
 Here is the double Q-learner following its policy after training.
 
-![name-of-you-image](https://your-copied-image-address)
+![Double Q-learner against dumb dad](https://github.com/sjhatfield/babyberry/blob/main/videos/double-Qlearner-dumb.gif)
 
 The best performing algorithm against the **smart dad** was the Q-learner whose graph and an example of playback are below.
 
 ![Plot of average total reward over previous 200 episodes](https://github.com/sjhatfield/babyberry/blob/main/images/smart_dad/Qlearner/episode_rewards.png?raw=true)
 
-![name-of-you-image](https://your-copied-image-address)
+![name-of-you-image](https://github.com/sjhatfield/babyberry/blob/main/videos/Qlearner-smart.gif)
