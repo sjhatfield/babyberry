@@ -32,7 +32,7 @@ state_visits = defaultdict(int)
 epsilon_decay = Decay(
     1,
     constants.EPSILON_MIN,
-    constants.EPISODES_TO_LEARN,
+    constants.EPISODES_TO_LEARN[folder],
     proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
@@ -42,9 +42,10 @@ game = init_game_for_learning(dumb_dad=not SMART_DAD)
 episode_durations = []
 episode_rewards = []
 unique_states_seen = []
+beaten = False
 
 # Begin learning
-for i in tqdm(range(constants.EPISODES_TO_LEARN)):
+for i in tqdm(range(constants.EPISODES_TO_LEARN[folder])):
     # Return to beginning of game
     state, total_reward, done = game.reset()
     states = [state]
@@ -110,22 +111,23 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
     unique_states_seen.append(len(Q.keys()))
 
     # Print some progress to CLI
-    if i % (constants.EPISODES_TO_LEARN / 10) == 0:
+    if i % (constants.EPISODES_TO_LEARN[folder] / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
 
     # Check for game completion
-    if (
-        np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
-        > constants.WIN_AVERAGE[folder]
-    ):
-        print(
-            f"Game beaten in {i} episodes with average episode length over past ",
-            f"{constants.EPISODE_WINDOW} episodes of ",
-            f"{np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}",
-        )
-        break
+    if not beaten:
+        if (
+            np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
+            > constants.WIN_AVERAGE[folder]
+        ):
+            print(
+                f"Game beaten in {i} episodes with average episode length over past ",
+                f"{constants.EPISODE_WINDOW} episodes of ",
+                f"{np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}",
+            )
+            beaten = i
 
 # Save the Q-values which is the policy
 with open(f"../policies/{folder}/nstep_sarsa/policy.pickle", "wb") as f:
@@ -137,14 +139,17 @@ save_episode_duration_graph(
     episode_durations,
     learner="N-step Sarsa",
     mean_length=constants.EPISODE_WINDOW,
+    beaten=beaten,
 )
 
 save_episode_reward_graph(
     f"../images/{folder}/nstep_sarsa/episode_rewards.png",
     episode_rewards,
     learner="N-step Sarsa",
+    episodes=constants.EPISODES_TO_LEARN[folder],
     proportion_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
+    beaten=beaten,
 )
 
 save_unique_states_graph(

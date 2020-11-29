@@ -28,7 +28,7 @@ np.random.seed(constants.SEED)
 epsilon_decay = Decay(
     1,
     constants.EPSILON_MIN,
-    constants.EPISODES_TO_LEARN,
+    constants.EPISODES_TO_LEARN[folder],
     proportion_to_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
 )
 
@@ -37,8 +37,9 @@ game = init_game_for_learning(dumb_dad=not SMART_DAD)
 episode_durations = []
 episode_rewards = []
 unique_states_seen = []
+beaten = False
 
-for i in tqdm(range(constants.EPISODES_TO_LEARN)):
+for i in tqdm(range(constants.EPISODES_TO_LEARN[folder])):
     state, total_reward, done = game.reset()
     state_visits[state.tobytes()] += 1
     steps = 0
@@ -67,21 +68,22 @@ for i in tqdm(range(constants.EPISODES_TO_LEARN)):
     episode_rewards.append(total_reward)
     unique_states_seen.append(len(Q.keys()))
 
-    if i % (constants.EPISODES_TO_LEARN / 10) == 0:
+    if i % (constants.EPISODES_TO_LEARN[folder] / 10) == 0:
         print(
             f"Average reward over last {constants.EPISODE_WINDOW} episodes: {np.mean(episode_rewards[-constants.EPISODE_WINDOW:])}"
         )
 
-    if (
-        np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
-        > constants.WIN_AVERAGE[folder]
-    ):
-        print(
-            f"Game beaten in {i} episodes with average episode length over past ",
-            f"{constants.EPISODE_WINDOW} episodes of ",
-            f"{np.mean(episode_durations[-constants.EPISODE_WINDOW:])}",
-        )
-        break
+    if not beaten:
+        if (
+            np.mean(episode_rewards[-constants.EPISODE_WINDOW :])
+            > constants.WIN_AVERAGE[folder]
+        ):
+            print(
+                f"Game beaten in {i} episodes with average episode length over past ",
+                f"{constants.EPISODE_WINDOW} episodes of ",
+                f"{np.mean(episode_durations[-constants.EPISODE_WINDOW:])}",
+            )
+            beaten = i
 
 
 with open(f"../policies/{folder}/sarsa/policy.pickle", "wb") as f:
@@ -92,14 +94,17 @@ save_episode_duration_graph(
     episode_durations,
     learner="Sarsa",
     mean_length=constants.EPISODE_WINDOW,
+    beaten=beaten,
 )
 
 save_episode_reward_graph(
     f"../images/{folder}/sarsa/episode_rewards.png",
     episode_rewards,
     learner="Sarsa",
+    episodes=constants.EPISODES_TO_LEARN[folder],
     proportion_decay_over=constants.PROPORTION_DECAY_EPSILON_OVER,
     mean_length=constants.EPISODE_WINDOW,
+    beaten=beaten,
 )
 
 save_unique_states_graph(

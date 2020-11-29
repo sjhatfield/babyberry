@@ -13,7 +13,7 @@ matplotlib.style.use("seaborn-dark")
 
 
 def save_episode_duration_graph(
-    filename: str, durations: list, learner: str, mean_length: int = 10
+    filename: str, durations: list, learner: str, beaten: int, mean_length: int = 10
 ) -> None:
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
@@ -34,6 +34,8 @@ def save_episode_duration_graph(
         (len(durations) - 1, means[-1]),
         xytext=(len(durations) - 1 + 200, means[-1]),
     )
+    plt.axvline(x=beaten)
+    plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
     ax.grid()
     fig.savefig(filename)
 
@@ -43,6 +45,8 @@ def save_episode_reward_graph(
     rewards: list,
     learner: str,
     proportion_decay_over: float,
+    episodes: int,
+    beaten: int,
     mean_length: int = 10,
 ) -> None:
     fig, ax = plt.subplots(dpi=600)
@@ -65,13 +69,15 @@ def save_episode_reward_graph(
         xytext=(len(rewards) - 1, means[-1] - 10),
     )
     ax.grid()
-    plt.axvline(x=proportion_decay_over * constants.EPISODES_TO_LEARN)
+    plt.axvline(x=proportion_decay_over * episodes)
     plt.text(
-        x=proportion_decay_over * constants.EPISODES_TO_LEARN + 5,
+        x=proportion_decay_over * episodes + 5,
         y=min(means) + 10,
         s="Epsilon fully decayed",
         rotation=90,
     )
+    plt.axvline(x=beaten, color="r")
+    plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
     fig.savefig(filename)
 
 

@@ -12,15 +12,15 @@ Here is the baby moving randomly with a smart dad who moves towards the baby wit
 
 ![Baby moving randomly against smart dad](https://github.com/sjhatfield/babyberry/blob/main/images/random-smart.gif)
 
-The purpose of this project was to use a variety of Reinforcement Learning algorithms in a new environment. In the models folder you can find the learning algorithm implementations. With the way the rewards were chosen, averaging 0 total reward over 200 consecutive epsiodes was considered *winning* the game.
+The purpose of this project was to use a variety of reinforcemnt learning algorithms in a new environment. In the models folder you can find the learning algorithm implementations. With the way the rewards were chosen, averaging 0 total reward over 200 consecutive epsiodes was considered *winning* the game against the **dumb dad**. Against the **smart dad** with a movement probability of 25%, averaging over -30 total reward was considered *winning*.
 
-The algorithms were used against a dumb dad who moved randomly 50% of the time and a smart dad who moved towards the baby 50% of the time.
+The algorithms were used against a dumb dad who moved randomly 50% of the time and a smart dad who moved towards the baby 25% of the time.
 
 The best performing algorithm against the **dumb dad** was the double Q-learner for which a plot is shown below.
 
 ![Plot of average total reward over previous 200 episodes](https://github.com/sjhatfield/babyberry/blob/main/images/dumb_dad/double_Qlearner/episode_rewards.png?raw=true)
 
-All learners were given the same hyperparameters to assess their performance fairly. Epsilon was decayed over 90% of the 30,000 episodes available for training, beginning at 1 and ending at 0.01. In reality, some of the learners may have completed the task quicker with a lower proportion of episodes to decay epsilon over.
+All learners were given the same hyperparameters to assess their performance fairly. The learners were given more episodes to train against the smart dad, 100,000 as opposed to 30,000. Epsilon was decayed over 90% of the episodes available for training, beginning at 1 and ending at 0.01. In reality, some of the learners may have completed the task quicker with a lower proportion of episodes to decay epsilon over but for a fair comparison this was left constant.
 
 Here is the double Q-learner following its policy after training.
 
