@@ -31,3 +31,7 @@ The best performing algorithm against the **smart dad** was the Q-learner whose 
 ![Plot of average total reward over previous 200 episodes](https://github.com/sjhatfield/babyberry/blob/main/images/smart_dad/Qlearner/episode_rewards.png?raw=true)
 
 ![name-of-you-image](https://github.com/sjhatfield/babyberry/blob/main/videos/Qlearner-smart.gif)
+
+# TODO
+
+Implement n-step Tree Backup, off-policy Monte-Carlo control, Monte-Carlo Exploring Starts and Q($$\sigma$$) learning algorithms.
