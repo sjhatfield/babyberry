@@ -28,6 +28,6 @@ Here is the double Q-learner following its policy after training.
 
 The best performing algorithm against the **smart dad** was the Q-learner whose graph and an example of playback are below.
 
-![Plot of average total reward over previous 200 episodes](https://github.com/sjhatfield/babyberry/blob/main/images/smar_dad/Qlearner/episode_rewards.png?raw=true)
+![Plot of average total reward over previous 200 episodes](https://github.com/sjhatfield/babyberry/blob/main/images/smart_dad/Qlearner/episode_rewards.png?raw=true)
 
 ![name-of-you-image](https://your-copied-image-address)
