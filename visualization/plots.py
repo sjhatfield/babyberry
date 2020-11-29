@@ -34,8 +34,9 @@ def save_episode_duration_graph(
         (len(durations) - 1, means[-1]),
         xytext=(len(durations) - 1 + 200, means[-1]),
     )
-    plt.axvline(x=beaten)
-    plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
+    if beaten:
+        plt.axvline(x=beaten)
+        plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
     ax.grid()
     fig.savefig(filename)
 
@@ -76,8 +77,9 @@ def save_episode_reward_graph(
         s="Epsilon fully decayed",
         rotation=90,
     )
-    plt.axvline(x=beaten, color="r")
-    plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
+    if beaten:
+        plt.axvline(x=beaten, color="r")
+        plt.text(x=beaten + 5, y=min(means) + 10, s="Game beaten", rotation=90)
     fig.savefig(filename)
 
 
