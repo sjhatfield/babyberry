@@ -1,6 +1,6 @@
 # Baby Berry RL Environment
 
-This repo contains an environment where a baby is placed in a grid world with a number of berries. The baby may move North, South, East or West to catch berries and eat them. Once all the berries are eaten the game is over and the baby experiences a large reward. The berries may be given random movement probabilities.
+This repo contains an environment where a baby is placed in a grid world with a number of berries. The baby may move north, south, east or west to catch berries and eat them. Once all the berries are eaten the game is over and the baby experiences a large reward. The berries may be given random movement probabilities.
 
 Additionally, there may be a dad who moves around the world trying to pick up the baby and stop them eating all the tasty berries.
 
@@ -39,3 +39,5 @@ Implement n-step Tree Backup, off-policy Monte-Carlo control, Monte-Carlo Explor
 Try increasing the state view for the baby to 7.
 
 Add random blocks of wall to the environment.
+
+Change the action selection from "N", "S", "E", "W", "R" to 0, 1, 2 ,3 ,4
