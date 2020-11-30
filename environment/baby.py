@@ -1,4 +1,5 @@
 import sys
+from typing import Tuple
 
 sys.argv.append("..")
 
@@ -13,12 +14,22 @@ class Baby:
     berries. The game is over once all of the berries are eaten
     """
 
-    def __init__(self, board_dimensions: tuple, initial_position: list = None):
+    def __init__(self, board_dimensions: tuple, initial_position: list = None) -> None:
+        """Creates a baby giving it the board dimensions so that it may not move outside
+        the board and an initial position
+
+        Parameters
+        ----------
+        board_dimensions : tuple
+            rows and columns of the board
+        initial_position : list, optional
+            initial positition within the board, if not given a random position
+            is given, by default None
         """
-        Initializes the baby character in a board. If intial coordinates
-        are given then they are placed there. Otherwise placement is random.
-        Position should be given as (row, column) like numpy
-        """
+        assert len(board_dimensions) == 2, "board dimensions must be 2 digit array"
+        assert all(
+            [dim >= 0 for dim in board_dimensions]
+        ), "dimensions must be positive"
         self.board_dimensions = board_dimensions
         if initial_position:
             assert type(initial_position) == list, "Position must be length 2 list"
@@ -39,10 +50,18 @@ class Baby:
             ]
 
     def action(self, direction: str) -> bool:
-        """
-        Executes a one step movement in either of the 4 compass
-        directions. Returns True is the move was legal and returns
-        False if the move was illegal. Coordinate are (row, col)
+        """Takes the given action and returns whether it was a valid executed 
+        move
+
+        Parameters
+        ----------
+        direction : str
+            one of the four compass directions or random movement
+
+        Returns
+        -------
+        bool
+            whether the move was valid and executed
         """
         direction = direction[0].upper()
         assert (
@@ -85,7 +104,7 @@ class Baby:
                 return False
         return False
 
-    def get_position(self):
+    def get_position(self) -> Tuple[int]:
         """Returns the position on the baby as a tuple of ints
 
         Returns
@@ -94,7 +113,7 @@ class Baby:
         """
         return self.position.copy()
 
-    def get_board_dimensions(self) -> list:
+    def get_board_dimensions(self) -> list[int]:
         """Returns the board dimensions
 
         Returns
@@ -103,7 +122,7 @@ class Baby:
         """
         return self.board_dimensions.copy()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """For printing the position of a baby
 
         Returns

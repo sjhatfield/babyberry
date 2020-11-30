@@ -2,6 +2,8 @@ import sys
 
 sys.argv.append("..")
 
+from utils import constants
+
 from environment.berry import Berry
 from typing import Union
 import numpy as np
@@ -15,10 +17,37 @@ class Dad(Berry):
         initial_position: list = None,
         dumb: bool = True,
     ):
+        """Creates a dad, possibly with a movement probability and initial position
+        The dad may be dumb and moves randomly or not dumb (smart) which means he moves
+        towards the baby
+
+        Parameters
+        ----------
+        board_size : Union[int, tuple]
+            Board size may be an int meaning square board or tuple
+        movement_probability : float, optional
+            Probability that the dad moves at each step, by default None
+        initial_position : list, optional
+            Where the dad starts, by default None
+        dumb : bool, optional
+            Whether the dad is dumb or not (smart), by default True
+        """
         Berry.__init__(self, board_size, movement_probability, initial_position)
         self.dumb = dumb
 
     def action(self, direction: str, baby_position: tuple) -> None:
+        """Takes the given action according to the movement probability
+        But first checks if the baby is adjacent to dad and moves dad onto
+        the baby
+
+        Parameters
+        ----------
+        direction : str
+            One of the allowed movements
+        baby_position : tuple
+            Where the baby is located
+        """
+        assert direction in constants.BABY_MOVEMENTS
         # First move to pick up baby is they are adjacent
         if baby_position[0] == self.position[0]:
             if baby_position[1] == self.position[1] - 1:

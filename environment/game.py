@@ -45,7 +45,7 @@ class Game:
         ----------
         board_size : Union[int, tuple]
             If integer the board is a square, if tuple rectangular
-        baby_position : list
+        baby_initial_position : list
             Two coordinate position of a baby
         move_reward : float
             The reward experienced (most likely negative) for moving
@@ -61,12 +61,14 @@ class Game:
             The positions of the berries, fewer positions than berries can be given, by default [None]
         berry_movement_probabilities : List[float], optional
             The berry movement probabilities as floats, fewer can be given than the berries, by default [None]
-        dad_position: List[int], default = None
+        dad_initial_position: List[int], default = None
             If not none means there is a dad on the board to pick up the baby, gives the starting position of the dad
         dad_movement_probability : float
             Probility that if the dad cannot pick up the baby he will take a random movement
         dumb_dad : bool, by default True
             Determines whether the dad is smart meaning he moves towards the baby at each step.
+        game_over_reward : int, by default -80
+            reward the baby experiences if they lose the game
         state_size : int, by default 3
             This is the size of the window around the baby that is returned as the state
         
@@ -165,7 +167,7 @@ class Game:
 
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets the board to its original configuration. For berries with no 
         position a random one is used so these will change over different episodes
         """
@@ -253,7 +255,7 @@ class Game:
                 return True
         return False
 
-    def move_berries(self):
+    def move_berries(self) -> None:
         """Perform movement of all the berries on the board. One by one
         their possible legal moves are found which do not result in
         sharing a square with the baby or other berries, then a 
@@ -280,11 +282,23 @@ class Game:
 
             self.make_board()
 
-    def step(self, action, render: bool = False):
-        """
-        This function performs the baby action and updates the board accordingly.
+    def step(self, action: str, render: bool = False) -> np.array, int, bool:
+        """This function performs the baby action and updates the board accordingly.
         It returns the new state of the board, the reward received by the baby and
         whether this action has resulted in the game being finished (all berries eaten)
+
+        Parameters
+        ----------
+        action : str
+            Movement to be performed by the baby
+        render : bool, optional
+            Whether the board should be rendered through the CLI, by default False
+
+        Returns
+        -------
+        np.array, int, bool
+            returns the state after the action, reward experienced for taking the action
+            and a bool showing whether the game is over or not
         """
         # First check if dad is on baby
         if self.dad != None:
@@ -306,7 +320,7 @@ class Game:
                 False,
             )
 
-        # Now move the dad. He will pick up the baby if adjacent
+        # Now move the dad. He will move onto the baby if adjacent
         if self.dad:
             move = np.random.choice(constants.BERRY_MOVEMENTS)
             self.dad.action(move, self.baby.get_position())
@@ -328,7 +342,7 @@ class Game:
 
         # Find out if any berries now occupy the same space as the baby
         # meaning they have been eaten. There should be either 0 or 1
-        # berry in the same space as the baby
+        # berries in the same space as the baby
         eaten_idx = []
         for i, b in enumerate(self.berries):
             if self.baby.get_position() == b.get_position():
@@ -380,24 +394,38 @@ class Game:
     def get_board(self):
         return self.board.copy()
 
-    def get_board_image(self):
+    def get_board_image(self) -> np.array:
+        """Creates an RBG numpy array representing the board according
+        to the colors chosen in the constants file
+
+        Returns
+        -------
+        np.array
+            RGB array of the board
+        """
         dims = self.board_dimensions
+        # Create an (n, m, 3) dimension array (tensor) for RGB values
         image = np.full(
             shape=(dims[0], dims[1], 3),
             fill_value=constants.COLORS["tile"],
             dtype=np.uint8,
         )
+        # Place the baby color
         baby_pos = self.baby.get_position()
         image[(baby_pos[0], baby_pos[1])] = constants.COLORS["baby"]
+        # Place the berry colors
         for b in self.berries:
             berry_position = b.get_position().copy()
             image[(berry_position[0], berry_position[1])] = constants.COLORS["berry"]
+        # Place the dad color
         if self.dad:
             dad_pos = self.dad.get_position().copy()
             image[(dad_pos[0], dad_pos[1])] = constants.COLORS["dad"]
         return image
 
     def render(self):
+        """Renders the board using the RGB array in the CLI
+        """
         img = cv2.resize(
             self.get_board_image()[..., ::-1].copy() / 255.0,
             (300, 300),
@@ -405,14 +433,6 @@ class Game:
         )
         cv2.imshow("Environment Render", img)
         cv2.waitKey(constants.WAIT_MS)
-
-    def get_frame(self):
-        img = cv2.resize(
-            self.get_board_image()[..., ::-1].copy() / 255.0,
-            (300, 300),
-            interpolation=cv2.INTER_NEAREST,
-        )
-        return img
 
     def get_berries(self):
         return self.berries

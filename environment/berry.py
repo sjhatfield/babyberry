@@ -29,7 +29,7 @@ class Berry:
             or tuple if rectangular
         movement_probability : float, optional
             This is the probability that the berry will move one of the four directions per timestep, by default None
-        position : list, optional
+        initial_position : list, optional
             This is the 2 coordinate starting position of a berry, by default None
         """
         if type(board_size) == int:
@@ -62,7 +62,7 @@ class Berry:
                 np.random.randint(0, self.board_dimensions[1] - 1),
             ]
 
-    def action(self, direction: str):
+    def action(self, direction: str) -> None:
         """The berry randomly moves in one of the four compass directions with
         probability given upon initialization
 

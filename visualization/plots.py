@@ -1,4 +1,5 @@
 import sys
+from typing import Union
 
 sys.path.append("..")
 
@@ -13,8 +14,31 @@ matplotlib.style.use("seaborn-dark")
 
 
 def save_episode_duration_graph(
-    filename: str, durations: list, learner: str, beaten: int, mean_length: int = 10
+    filename: str,
+    durations: list,
+    learner: str,
+    beaten: Union[int, bool],
+    mean_length: int = 10,
 ) -> None:
+    """Creates and saves a plot of episode durations average over the mean length
+    puts a vertical line in where the game was beaten for the first time
+
+    Parameters
+    ----------
+    filename : str
+        name of the file to be saved with its location
+    durations : list
+        list of the duration of each episode over training
+    learner : str
+        name of the learner
+    beaten : int or bool
+        an integer of which episode beat the game for the first time, or a bool = False
+        showing that the game was never beaten
+    mean_length : int, optional
+        the period over which to calculate running averages, by default 10
+    """
+    assert i > 0 or i == False, "beaten must be a positive integer or False"
+    assert mean_length > 0, "mean length must be a positive integer"
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Episode duration")
@@ -50,6 +74,32 @@ def save_episode_reward_graph(
     beaten: int,
     mean_length: int = 10,
 ) -> None:
+    """Creates and saves a plot of episode durations average over the mean length
+    puts a vertical line in where the game was beaten for the first time. Also puts
+    a vertical line where epsilon was decayed to its minimal value
+
+    Parameters
+    ----------
+    filename : str
+        name of the file to be saved with its location
+    rewards : list
+        list of episode rewards
+    learner : str
+        name of the learner
+    proportion_decay_over : float
+        proportion as a decimal for which epsilon was decayed over
+    episodes : int
+        number of episodes that were used for training
+    beaten : int
+        integer for which the game was beaten first or False showing game was not beaten
+    mean_length : int, optional
+        length to calculate the running average over, by default 10
+    """
+    assert (
+        0 < proportion_decay_over <= 1
+    ), "proportion to decay over should be a decimal between 0 and 1"
+    assert i > 0 or i == False, "beaten must be a positive integer or False"
+    assert mean_length > 0, "mean length must be a positive integer"
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Episode total reward")
@@ -84,6 +134,18 @@ def save_episode_reward_graph(
 
 
 def save_unique_states_graph(filename: str, unique_states: list, learner: str) -> None:
+    """Plots the cumulative number of unique states that have been seen at each
+    stage of learning
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to be saved and location
+    unique_states : list
+        List of unique states (cumulative) seen at each stage of learning
+    learner : str
+        Name of learner
+    """
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Unique states")
