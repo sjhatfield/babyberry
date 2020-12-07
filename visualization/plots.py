@@ -37,7 +37,7 @@ def save_episode_duration_graph(
     mean_length : int, optional
         the period over which to calculate running averages, by default 10
     """
-    assert i > 0 or i == False, "beaten must be a positive integer or False"
+    assert beaten > 0 or beaten == False, "beaten must be a positive integer or False"
     assert mean_length > 0, "mean length must be a positive integer"
     fig, ax = plt.subplots(dpi=600)
     ax.set_xlabel("Episode")
@@ -113,11 +113,6 @@ def save_episode_reward_graph(
         means,
         color="green",
         linewidth=2,
-    )
-    ax.annotate(
-        f"{len(rewards)} episodes",
-        (len(rewards) - 1, means[-1]),
-        xytext=(len(rewards) - 1, means[-1] - 10),
     )
     ax.grid()
     plt.axvline(x=proportion_decay_over * episodes)

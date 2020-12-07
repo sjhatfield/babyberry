@@ -1,5 +1,5 @@
 import sys
-from typing import Tuple
+from typing import Tuple, List
 
 sys.argv.append("..")
 
@@ -113,7 +113,7 @@ class Baby:
         """
         return self.position.copy()
 
-    def get_board_dimensions(self) -> list[int]:
+    def get_board_dimensions(self) -> List[int]:
         """Returns the board dimensions
 
         Returns

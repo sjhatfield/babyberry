@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 # Learning hyperparameters
 N = 3  # Needs to be relatively low due to small window on state
-SMART_DAD = False
+SMART_DAD = True
 if SMART_DAD:
     folder = "smart_dad"
 else:

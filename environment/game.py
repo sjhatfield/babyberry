@@ -282,7 +282,7 @@ class Game:
 
             self.make_board()
 
-    def step(self, action: str, render: bool = False) -> np.array, int, bool:
+    def step(self, action: str, render: bool = False) -> (np.array, int, bool):
         """This function performs the baby action and updates the board accordingly.
         It returns the new state of the board, the reward received by the baby and
         whether this action has resulted in the game being finished (all berries eaten)
