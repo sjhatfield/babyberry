@@ -40,6 +40,6 @@ Try increasing the state view for the baby to 7.
 
 Add random blocks of wall to the environment.
 
-Change the action selection from "N", "S", "E", "W", "R" to 0, 1, 2 ,3, 4
+Change the action selection from "N", "S", "E", "W", "R" to 0, 1, 2, 3, 4
 
 Experiment with adding a "stay still" action
